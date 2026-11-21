@@ -1,0 +1,2831 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>どうぶつ無人島サバイバル</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Zen+Maru+Gothic:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #cfdbe3; font-family: 'Noto Sans JP', sans-serif; color: #3b2f25; user-select: none; -webkit-user-select: none; }
+  button { font-family: inherit; cursor: pointer; }
+  #game { position: fixed; inset: 0; width: 100%; height: 100%; touch-action: none; display: block; }
+  .pill { background: #fff; border: 2px solid #5b4636; border-radius: 14px; padding: 3px 12px; font-family: 'Zen Maru Gothic', sans-serif; font-weight: 700; font-size: 14px; white-space: nowrap; }
+  #hud { position: fixed; top: 8px; left: 8px; display: flex; gap: 6px; flex-wrap: wrap; pointer-events: none; max-width: calc(100% - 230px); }
+  #speed { position: fixed; top: 8px; right: 8px; display: flex; gap: 4px; }
+  #speed button { background: #fff; border: 2px solid #5b4636; border-radius: 10px; min-width: 40px; height: 32px; font-weight: 700; color: #5b4636; font-size: 13px; }
+  #speed button.on { background: #ffd36b; }
+  #alerts { position: fixed; top: 48px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 6px; align-items: center; width: min(600px, 94vw); pointer-events: none; }
+  .alert { pointer-events: auto; background: #ffe1db; border: 2px solid #d9534f; color: #b3261e; border-radius: 14px; padding: 5px 12px; font-weight: 700; font-size: 13px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,.12); }
+  .alert.warn { background: #fff6d6; border-color: #e0a800; color: #8a6400; }
+  .alert button { background: #fff; border: 2px solid currentColor; color: inherit; border-radius: 10px; padding: 2px 10px; font-weight: 700; font-size: 12px; }
+  .alert button:disabled { opacity: .5; cursor: default; }
+  #log { position: fixed; left: 8px; bottom: 82px; width: min(440px, 62vw); font-size: 12.5px; pointer-events: none; display: flex; flex-direction: column-reverse; }
+  #log div { background: rgba(255,255,255,.88); border-radius: 8px; padding: 2px 8px; margin-top: 3px; width: fit-content; max-width: 100%; }
+  #log .bad { color: #c0392b; font-weight: 700; } #log .good { color: #2e7d32; font-weight: 700; }
+  #team { position: fixed; left: 8px; right: 220px; bottom: 8px; display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+  .mem { background: #fff; border: 2px solid #5b4636; border-radius: 12px; padding: 2px 6px 4px; display: flex; flex-direction: column; align-items: center; cursor: pointer; min-width: 66px; }
+  .mem.sel { background: #fff3c4; }
+  .mem.dead { opacity: .45; }
+  .mem canvas { width: 48px; height: 40px; }
+  .mem .nm { font-size: 11px; font-weight: 700; line-height: 1.2; }
+  .bar { height: 5px; background: #eee; border-radius: 3px; width: 52px; overflow: hidden; margin-top: 2px; }
+  .bar i { display: block; height: 100%; background: #f0a04b; }
+  #mini { position: fixed; right: 8px; bottom: 8px; border: 2px solid #5b4636; border-radius: 10px; background: #cfdbe3; width: 200px; height: 150px; cursor: pointer; }
+  #panel { position: fixed; right: 8px; top: 48px; width: 290px; max-height: calc(100% - 220px); overflow: auto; background: #fff; border: 2px solid #5b4636; border-radius: 14px; padding: 10px 12px; font-size: 12.5px; display: none; }
+  #panel .x { position: absolute; right: 8px; top: 6px; border: none; background: none; font-size: 18px; color: #5b4636; }
+  #panel .ph { display: flex; gap: 8px; align-items: center; }
+  #panel canvas { width: 90px; height: 74px; background: #e3f4fa; border-radius: 10px; flex-shrink: 0; }
+  .pn { font-family: 'Zen Maru Gothic', sans-serif; font-weight: 700; font-size: 18px; }
+  .ps { font-size: 12px; color: #7a6656; }
+  .chips { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 3px; }
+  .chip { font-size: 11px; background: #f3ead9; border-radius: 8px; padding: 1px 6px; }
+  .sec { font-weight: 700; margin: 10px 0 3px; color: #5b4636; border-bottom: 1px dashed #d8c9b5; }
+  .st { display: flex; align-items: center; gap: 6px; font-size: 12px; line-height: 1.6; }
+  .st span { width: 48px; }
+  .st b { display: inline-block; width: 110px; height: 8px; border-radius: 4px; background: linear-gradient(to right, var(--c, #f0a04b) calc(var(--v) * 1%), #eee 0); }
+  .st em { font-style: normal; width: 28px; text-align: right; }
+  #panel select { width: 100%; font-family: inherit; font-size: 13px; padding: 3px; border-radius: 8px; border: 2px solid #5b4636; }
+  .pbtns { display: flex; gap: 6px; margin-top: 8px; }
+  .pbtns button, .btn { background: #fff; border: 2px solid #5b4636; border-radius: 10px; padding: 4px 10px; font-weight: 700; color: #5b4636; font-size: 12.5px; }
+  .pbtns button:hover, .btn:hover { background: #fff3c4; }
+  .rel { display: flex; align-items: center; gap: 6px; font-size: 12px; line-height: 1.7; }
+  .rel span { width: 100px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .spx { font-size: 12px; background: #f6f1e8; border-radius: 8px; padding: 5px 8px; margin-top: 8px; line-height: 1.6; }
+  .jobs { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; font-size: 12px; }
+  .stars { color: #f0a04b; letter-spacing: -1px; }
+  .jobs div { white-space: nowrap; }
+  .zcard .jobs, .scard .jobs { font-size: 11px; gap: 0 6px; }
+  /* スタート画面 */
+  #start { position: fixed; inset: 0; background: #f4efe6; overflow: auto; padding: 22px; z-index: 10; }
+  #start h1 { font-family: 'Zen Maru Gothic', sans-serif; font-size: 28px; margin: 0 0 4px; }
+  #start p { margin: 0 0 14px; font-size: 14px; line-height: 1.7; }
+  .sgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; max-width: 1400px; }
+  .scard { background: #fff; border-radius: 14px; padding: 12px; box-shadow: 0 2px 10px rgba(0,0,0,.08); }
+  .scard canvas { width: 100%; aspect-ratio: 200 / 130; background: #e3f4fa; border-radius: 10px; display: block; }
+  .scard .top { display: flex; justify-content: space-between; align-items: baseline; margin-top: 6px; }
+  .diet { font-size: 11px; border-radius: 8px; padding: 1px 7px; font-weight: 700; }
+  .diet.herb { background: #e3f4d9; color: #3d7a26; } .diet.carn { background: #ffe1db; color: #b3261e; } .diet.omni { background: #fff1cc; color: #8a6400; }
+  .rolls { display: flex; gap: 6px; margin-top: 8px; }
+  .rolls button { flex: 1; font-size: 11.5px; padding: 3px 4px; }
+  #contBox { display: none; align-items: center; gap: 12px; flex-wrap: wrap; background: #fff; border-radius: 14px; padding: 12px 14px; margin: 0 0 16px; box-shadow: 0 2px 10px rgba(0,0,0,.08); max-width: 1400px; }
+  #contInfo { font-size: 13.5px; line-height: 1.6; }
+  .startBtns { display: flex; gap: 10px; margin: 16px 0 30px; flex-wrap: wrap; }
+  .big { font-size: 16px; padding: 10px 22px; border-radius: 14px; border: 3px solid #5b4636; font-weight: 700; font-family: 'Zen Maru Gothic', sans-serif; }
+  .big.go { background: #ffd36b; color: #3b2f25; } .big.re { background: #fff; color: #5b4636; }
+  #over, #help { position: fixed; inset: 0; background: rgba(40,30,20,.55); display: none; align-items: center; justify-content: center; z-index: 20; }
+  #over .box, #help .box { background: #fff; border: 3px solid #5b4636; border-radius: 18px; padding: 20px 24px; max-width: min(520px, 92vw); max-height: 90vh; overflow: auto; font-size: 14px; line-height: 1.8; }
+  #over h2, #help h2 { font-family: 'Zen Maru Gothic', sans-serif; margin: 0 0 8px; }
+  #err { position: fixed; left: 0; right: 0; top: 0; background: #c0392b; color: #fff; font-size: 12px; padding: 4px 8px; z-index: 99; display: none; white-space: pre-wrap; }
+  /* 建てるメニュー */
+  #build { position: fixed; right: 8px; bottom: 166px; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+  #bTools { display: none; flex-direction: column; gap: 4px; background: #fff; border: 2px solid #5b4636; border-radius: 14px; padding: 6px; }
+  #bTools button, #bOpen { background: #fff; border: 2px solid #5b4636; border-radius: 10px; padding: 4px 10px; font-weight: 700; color: #5b4636; font-size: 13px; text-align: left; min-width: 150px; }
+  #bTools button small { font-weight: 400; margin-left: 6px; color: #7a6656; }
+  #bTools button.on, #bOpen.on { background: #ffd36b; }
+  #bTools button:disabled { opacity: .45; }
+  #bHint { position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%); background: #fff6d6; border: 2px solid #e0a800; color: #6b4e00; border-radius: 12px; padding: 4px 12px; font-size: 12.5px; font-weight: 700; display: none; pointer-events: none; white-space: nowrap; }
+  /* 図鑑 */
+  #zukan { position: fixed; inset: 0; background: #f4efe6; overflow: auto; padding: 22px; z-index: 30; display: none; }
+  #zukan h1 { font-family: 'Zen Maru Gothic', sans-serif; font-size: 26px; margin: 0 0 4px; }
+  #zukan > p { margin: 0 0 14px; font-size: 14px; line-height: 1.7; }
+  .zgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; max-width: 1400px; }
+  .zcard { background: #fff; border-radius: 14px; padding: 12px; box-shadow: 0 2px 10px rgba(0,0,0,.08); font-size: 12.5px; }
+  .zcard canvas { width: 100%; aspect-ratio: 200 / 130; background: #e3f4fa; border-radius: 10px; display: block; }
+  .zcard .top { display: flex; justify-content: space-between; align-items: baseline; margin-top: 6px; gap: 6px; }
+  .zrel { line-height: 1.6; margin-top: 6px; }
+  .zrel b { color: #b3261e; } .zrel i { font-style: normal; font-weight: 700; color: #3d7a26; }
+  #zClose { position: sticky; top: 0; float: right; z-index: 2; }
+  /* チュートリアル */
+  #tut { pointer-events: auto; background: #fff; border: 3px solid #5b4636; border-radius: 16px; padding: 8px 12px 10px; width: 100%; box-shadow: 0 3px 10px rgba(0,0,0,.15); font-size: 13px; line-height: 1.6; display: none; }
+  #tut .th { display: flex; justify-content: space-between; align-items: center; gap: 8px; cursor: pointer; }
+  #tut.mini #tutText, #tut.mini .tb { display: none; }
+  #tut.mini { padding: 5px 12px; }
+  #tut .tt { font-family: 'Zen Maru Gothic', sans-serif; font-weight: 700; font-size: 15px; }
+  #tut .tn { font-size: 11px; color: #7a6656; white-space: nowrap; }
+  #tut .tp { margin-top: 4px; font-weight: 700; color: #e07b00; }
+  #tut .tb { display: flex; gap: 6px; justify-content: flex-end; margin-top: 4px; }
+  #tut .tb button { background: #fff; border: 2px solid #5b4636; border-radius: 10px; padding: 3px 12px; font-weight: 700; color: #5b4636; font-size: 12.5px; }
+  #tut .tb button.go { background: #ffd36b; }
+  #tut .tb button.sk { border-color: #c9b9a6; color: #9a8877; font-weight: 400; }
+  .pulse { animation: pulse 1.1s ease-in-out infinite; position: relative; z-index: 5; }
+  @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,179,0,.9); } 50% { box-shadow: 0 0 0 7px rgba(255,179,0,0); } }
+  .tutOpt { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; }
+  .tutOpt input { width: 20px; height: 20px; }
+  /* 新しい仲間のお知らせ */
+  .alert.friend { background: #e8f5e9; border-color: #43a047; color: #1b5e20; }
+  .alert .small { font-weight: 400; font-size: 12px; width: 100%; text-align: center; }
+  /* スマホ */
+  @media (max-width: 700px) {
+    #speed { top: 6px; right: 6px; gap: 3px; }
+    #speed button { min-width: 34px; height: 32px; font-size: 12px; padding: 0 4px; }
+    #hud { top: 44px; left: 6px; right: 6px; max-width: none; gap: 4px; }
+    .pill { font-size: 11.5px; padding: 2px 9px; border-radius: 12px; white-space: normal; }
+    #alerts { top: 98px; width: calc(100vw - 12px); }
+    .alert { font-size: 12px; padding: 4px 8px; }
+    #panel { left: 6px; right: 6px; width: auto; top: auto; bottom: 78px; max-height: 52vh; }
+    #mini { width: 112px; height: 84px; right: 6px; bottom: 6px; }
+    #team { left: 6px; right: 124px; bottom: 6px; }
+    .mem { min-width: 56px; padding: 2px 4px 3px; }
+    .mem canvas { width: 42px; height: 35px; }
+    #log { bottom: 80px; width: calc(100vw - 140px); font-size: 11.5px; }
+    #log div:nth-child(n+4) { display: none; }
+    #build { bottom: 96px; right: 6px; }
+    #bTools button, #bOpen { min-width: 120px; font-size: 12.5px; padding: 6px 10px; }
+    #bHint { bottom: 140px; white-space: normal; width: calc(100vw - 20px); text-align: center; }
+    #start, #zukan { padding: 14px; }
+    #start h1 { font-size: 22px; }
+    .big { font-size: 15px; padding: 9px 16px; }
+  }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="hud"><div class="pill" id="clock"></div><div class="pill" id="stock"></div></div>
+<div id="speed">
+  <button data-s="0">⏸</button><button data-s="1" class="on">▶</button><button data-s="2">▶▶</button><button data-s="4">▶▶▶</button><button id="saveBtn" title="セーブ">💾</button><button id="zBtn" title="動物図鑑">📖</button><button id="helpBtn">？</button>
+</div>
+<div id="build">
+  <div id="bTools">
+    <button data-b="fence">🪵 柵<small>木3</small></button>
+    <button data-b="gate">🚪 門<small>木5</small></button>
+    <button data-b="house">🏠 家<small>木25・石10</small></button>
+    <button data-b="fire">🔥 たき火<small>木8</small></button>
+    <button data-b="shade">⛱ 日よけ<small>木6</small></button>
+    <button data-b="remove">🧹 こわす・取り消す</button>
+    <button data-b="none">✕ やめる</button>
+  </div>
+  <button id="bOpen">🔨 建てる</button>
+</div>
+<div id="bHint"></div>
+<div id="alerts">
+  <div id="tut">
+    <div class="th"><span class="tt" id="tutTitle"></span><span class="tn" id="tutNo"></span></div>
+    <div id="tutText"></div>
+    <div class="tp" id="tutProg"></div>
+    <div class="tb"><button class="sk" id="tutSkip">チュートリアルをやめる</button><button class="go" id="tutNext">次へ ▶</button></div>
+  </div>
+</div>
+<div id="log"></div>
+<div id="team"></div>
+<canvas id="mini" width="200" height="150"></canvas>
+
+<div id="panel">
+  <button class="x" id="pclose">×</button>
+  <div class="ph">
+    <canvas id="pcv" width="180" height="148"></canvas>
+    <div><div class="pn" id="pname"></div><div class="ps" id="psp"></div><div class="chips" id="ptraits"></div></div>
+  </div>
+  <div class="sec">いまの状態</div><div id="pneeds"></div><div id="pdoing" style="font-size:12px;margin-top:2px"></div>
+  <div class="sec">能力</div><div id="pstats"></div>
+  <div class="sec">仕事の向き不向き</div><div id="pjobs" class="jobs"></div>
+  <div class="sec">担当の仕事</div><select id="jobSel"></select>
+  <div class="sec">寝る場所</div><select id="homeSel"></select>
+  <div class="pbtns"><button id="feedBtn">🍽 ごはんをあげる</button><button id="followBtn">🎥 ついていく</button></div>
+  <div class="sec">なかよし度</div><div id="prels"></div>
+  <div class="spx" id="pspx"></div>
+</div>
+
+<div id="start">
+  <h1>🏝️ どうぶつ無人島サバイバル</h1>
+  <p>
+    いろんな動物たちが流れついた、大きな無人島。木を切り、食べ物を集め、夜には上陸してくる大ガニから身を守りましょう。<br>
+    同じ動物でも1匹ずつ能力と性格がちがいます。肉食の動物はおなかがすくと、仲間を「ごはん」に見てしまうことも…。<br>
+    最初は2匹だけ。浜辺にときどき新しい動物が流れつくので、仲間を少しずつ増やしていきましょう。
+  </p>
+  <div id="contBox"><button class="big go" id="contBtn">▶ 続きから遊ぶ</button><span id="contInfo"></span></div>
+  <div class="sgrid" id="sgrid"></div>
+  <div class="startBtns">
+    <label class="tutOpt"><input type="checkbox" id="tutOn" checked> 📘 チュートリアルつきで遊ぶ（はじめての方におすすめ）</label>
+  </div>
+  <div class="startBtns" style="margin-top:0">
+    <button class="big re" id="rerollAll">🎲 2匹とも選びなおす</button>
+    <button class="big re" id="zBtn2">📖 動物図鑑を見る</button>
+    <button class="big go" id="goBtn">⛵ この2匹で島へ出発！</button>
+  </div>
+</div>
+
+<div id="over"><div class="box"><h2 id="overTitle"></h2><div id="overText"></div><div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="big go" onclick="location.reload()">📂 最後のセーブ・新しい島を選ぶ</button></div></div></div>
+
+<div id="help"><div class="box">
+  <h2>🐾 あそびかた</h2>
+  <b>動かす</b>：パソコンはドラッグで移動・ホイールで拡大縮小。スマホは指でなぞって移動・2本指で拡大縮小。右下の小さな地図をタップするとそこへ飛べます。<br>
+  <b>仲間</b>：最初は2匹。2日目から、ときどき浜辺に新しい動物が流れつきます。お知らせの「仲間にする」で仲間になります。肉食と草食の相性に気をつけて選びましょう。<br>
+  <b>動物を選ぶ</b>：動物か、下の動物ボタンをクリック。能力・なかよし度が見られて、担当の仕事を決められます。<br>
+  <b>動物は自分で動きます</b>：おなかがすいたら食べ、夜は焚き火のそばで眠り、それ以外は仕事をします。「おまかせ」だと得意な仕事を自分で選びます。<br>
+  <b>探検</b>：島は雲でかくれています。「探検」担当にすると、遠くまで歩いて島を明らかにします。<br>
+  <b>食べ物</b>：草食は木の実、肉食は魚、雑食はどちらでも。肉食の仲間の魚を切らさないように！<br>
+  <b>なかよし度</b>：近くで過ごすと上がります。おなかをすかせた肉食動物は、仲の悪い小さな草食動物を追いかけることがあります。警告が出たら「魚をあげる」で止められます。<br>
+  <b>夜の大ガニ</b>：2日目の夜から、浜辺に大ガニが上陸してきます。戦いに強い動物が迎えうちます。<br>
+  <b>セーブ</b>：毎朝6時と1分ごと、ページを閉じるときに自動で保存されます。右上の💾でいつでも保存できます。次に開いたとき、スタート画面の「続きから遊ぶ」で再開できます（同じパソコン・同じブラウザで開いてください）。<br>
+  <b>季節</b>：春→夏→秋→冬が3日ずつめぐります。冬は木の実が実らず魚も減るので、秋のうちにためておきましょう。夏はカニが増えます。<br>
+  <b>気温</b>：動物ごとに快適な気温がちがいます。範囲より寒いと「寒さ」、暑いと「暑さ」がたまり、仕事がおそくなります。たまりすぎるとケガをして、最後は倒れてしまいます。<br>
+  　・暖まる：たき火のそば・家の中・仲間とくっつく　／　涼しくなる：日よけ・木陰・水辺（泳げる動物は海に入る）・家の中<br>
+  <b>建てる</b>：右下の「🔨 建てる」から、柵・門・家を置けます。材料は置いたときに使います。置いた場所へ「建築」担当の動物が行って建てます。<br>
+  　・<b>柵</b>：カニも動物も通れません。カニは柵をかじって壊そうとします。<br>
+  　・<b>門</b>：仲間は通れて、カニは通れません。柵で囲んだら門をつけてあげましょう。<br>
+  　・<b>家</b>：2匹まで中で眠れます。家の中ならカニにおそわれず、回復も早くなります。<br>
+  　・<b>たき火</b>：まわりが暖かくなります。<b>日よけ</b>：昼間、まわりが涼しくなります。<br>
+  　・柵はドラッグで並べて置けます。建てるモード中は、右ボタンドラッグ（スマホは2本指）で地図を動かせます。Escキーで終了。<br>
+  <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="helpClose">とじる</button><button class="btn" id="tutAgain">📘 チュートリアルを表示する</button><button class="btn" onclick="if(confirm('いまの島をやめて、新しい島ではじめますか？'))location.reload()">🎲 新しい島ではじめる</button></div>
+</div></div>
+<div id="zukan">
+  <button class="big go" id="zClose">✕ とじる</button>
+  <h1>📖 動物図鑑</h1>
+  <p>島に流れつく可能性のある、18種類の動物たちです。ここに出ている能力は「その動物のふつうの値」で、実際は1匹ずつ上下にばらつきます。</p>
+  <div class="zgrid" id="zgrid"></div>
+</div>
+<div id="err"></div>
+
+<script>
+'use strict';
+window.onerror = (m, s, l, c, e) => { const el = document.getElementById('err'); el.style.display = 'block'; el.textContent += 'エラー: ' + m + ' (行 ' + l + ')\n'; };
+
+// =====================================================
+// 基本設定
+// =====================================================
+const OL = '#5b4636';           // 線の色
+const FOG = '#cfdbe3';          // 雲（未探検）の色
+const T = 32;                   // 1マスの大きさ
+const MW = 280, MH = 210;       // 島のマス数（横・縦）
+const CH = 16;                  // 描画をまとめるブロックの大きさ（マス）
+const DAY = 240;                // 1日の長さ（秒・等速）
+const FONT = '"Zen Maru Gothic", "Noto Sans JP", sans-serif';
+const params = new URLSearchParams(location.search);
+
+// =====================================================
+// 小さな道具
+// =====================================================
+function hash(x, y) {
+  let h = (Math.imul(x | 0, 374761393) + Math.imul(y | 0, 668265263)) | 0;
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  h ^= h >>> 16;
+  return (h >>> 0) / 4294967296;
+}
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const rand = (a, b) => a + Math.random() * (b - a);
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+function shade(hex, amt) {
+  const n = parseInt(hex.slice(1), 16);
+  let r = n >> 16 & 255, g = n >> 8 & 255, b = n & 255;
+  const tg = amt > 0 ? 255 : 0, k = Math.abs(amt);
+  r = Math.round(r + (tg - r) * k); g = Math.round(g + (tg - g) * k); b = Math.round(b + (tg - b) * k);
+  return '#' + ((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1);
+}
+function rr(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+function blob(ctx, x0, y0, rx, ry, seed, amp) {
+  ctx.beginPath();
+  for (let i = 0; i <= 40; i++) {
+    const a = i / 40 * Math.PI * 2;
+    const r = 1 + amp * (Math.sin(a * 3 + seed) * .6 + Math.sin(a * 5 + seed * 2) * .4);
+    const x = x0 + Math.cos(a) * rx * r, y = y0 + Math.sin(a) * ry * r;
+    i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+  }
+  ctx.closePath();
+}
+function shadow(ctx, x, y, rx, ry) {
+  ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(80,55,30,.16)'; ctx.fill();
+}
+function dot(ctx, x, y, r, c) { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = c; ctx.fill(); }
+function E(ctx, x, y, rx, ry, fill, rot = 0, line = true) {
+  ctx.beginPath(); ctx.ellipse(x, y, rx, ry, rot, 0, Math.PI * 2);
+  if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+  if (line) { ctx.strokeStyle = OL; ctx.stroke(); }
+}
+function flame(ctx, x, y, w, h, c, line) {
+  ctx.beginPath(); ctx.moveTo(x, y - h);
+  ctx.bezierCurveTo(x + w, y - h * .4, x + w, y, x, y);
+  ctx.bezierCurveTo(x - w, y, x - w, y - h * .4, x, y - h);
+  ctx.fillStyle = c; ctx.fill();
+  if (line) { ctx.strokeStyle = OL; ctx.lineWidth = 2; ctx.stroke(); }
+}
+
+// =====================================================
+// 動物の種類
+//   base = [力, 速さ, 器用さ, 体力, 食欲]（1〜10）
+//   sk   = 仕事ごとの得意・不得意の倍率
+// =====================================================
+const SP = {
+  rabbit:   { n: 'うさぎ', size: 1, diet: 'herb', base: [2, 9, 5, 3, 4], sk: { gather: 1.3, fight: .4 }, alarm: 1,
+              sp: '耳がよく、夜にカニが上陸するといち早く気づいて仲間を起こす',
+              look: { body: '#fff8f0', ears: 'long', earIn: '#ffc2cc', tail: 'puff', tailC: '#ffffff', nose: '#ff8fa3' } },
+  lion:     { n: 'ライオン', size: 4, diet: 'carn', hunts: 1, base: [9, 7, 3, 8, 8], sk: { fight: 1.6, chop: .8, gather: .3, fish: .8 },
+              sp: '戦いがとても強い。おなかがすくと草食の仲間をねらうことも',
+              look: { body: '#f7c86a', mane: '#e0873a', ears: 'round', earIn: '#f2b24a', tail: 'tuft', tailTip: '#c9692a', muzzle: '#fff1d6' } },
+  beaver:   { n: 'ビーバー', size: 2, diet: 'herb', swim: 1, base: [5, 3, 8, 5, 4], sk: { chop: 2, fight: .6, fish: .8 },
+              sp: '木をかじって倒す名人（木こりが約2倍速い）。建築も得意。浅い海を泳げる',
+              look: { body: '#b07a4a', belly: '#d9ae7e', ears: 'tiny', tail: 'flat', tailC: '#6b4a33', muzzle: '#d9ae7e', teeth: 1 } },
+  bear:     { n: 'クマ', size: 5, diet: 'omni', base: [10, 4, 4, 10, 9], sk: { fish: 1.5, fight: 1.5, mine: 1.3, chop: 1.2 },
+              sp: '力持ちで魚とりも上手。ただし大食い',
+              look: { body: '#9a6b45', belly: '#c79a6e', ears: 'round', earIn: '#c79a6e', muzzle: '#e8c9a0' } },
+  squirrel: { n: 'リス', size: 1, diet: 'herb', base: [2, 9, 7, 2, 2], sk: { gather: 1.8, fight: .3, chop: .5 },
+              sp: '木の実集めの達人（採集がとても速い）',
+              look: { body: '#e39a52', belly: '#f7dcb8', ears: 'pointy', earIn: '#f2c08a', tail: 'fluffy', tailC: '#e39a52', tailTip: '#f2c08a' } },
+  turtle:   { n: 'カメ', size: 2, diet: 'omni', swim: 1, armor: .5, base: [4, 1, 4, 9, 2], sk: { fish: 1.3, fight: .8 },
+              sp: '甲羅で受けるダメージが半分。泳げる。とてもおそい',
+              look: { kind: 'turtle', body: '#9fd27a', shell: '#c9a25a' } },
+  fox:      { n: 'キツネ', size: 2, diet: 'carn', hunts: 1, base: [4, 8, 8, 4, 4], sk: { fish: 1.1, fight: 1 },
+              sp: '器用ですばしっこい。小さな草食動物をねらうことも',
+              look: { body: '#f08a3c', belly: '#fff3e6', muzzle: '#fff3e6', ears: 'pointy', earIn: '#5b3a2a', tail: 'brush', tailTip: '#ffffff' } },
+  cat:      { n: 'ネコ', size: 2, diet: 'carn', hunts: 1, base: [3, 8, 8, 4, 3], sk: { fish: 1.5, fight: .9 },
+              sp: '魚とりが得意。小さな動物をねらうことも',
+              look: { body: '#cfc6bd', stripes: '#9d8f80', ears: 'pointy', earIn: '#ffc2cc', tail: 'thin', nose: '#ff8fa3' } },
+  dog:      { n: 'イヌ', size: 3, diet: 'omni', base: [6, 7, 5, 6, 5], sk: { fight: 1.2 }, social: 1.4, alarm: 1,
+              sp: 'だれとでも仲よくなりやすい。物音に気づいて仲間を起こす',
+              look: { body: '#e0b07a', belly: '#fff3e0', muzzle: '#fff3e0', ears: 'droop', earC: '#a8703f', tail: 'short' } },
+  wolf:     { n: 'オオカミ', size: 3, diet: 'carn', hunts: 1, base: [7, 8, 4, 6, 6], sk: { fight: 1.4 },
+              sp: '戦いが強く足も速い。肉食',
+              look: { body: '#9aa3ad', belly: '#e8ecef', muzzle: '#e8ecef', ears: 'pointy', earIn: '#6b737c', tail: 'brush', tailTip: '#e8ecef' } },
+  panda:    { n: 'パンダ', size: 4, diet: 'herb', base: [8, 3, 4, 8, 8], sk: { chop: 1.3, fight: 1.1 },
+              sp: '見た目はのんびり、じつは力持ち',
+              look: { body: '#ffffff', ears: 'round', earC: '#333333', feet: '#333333', mask: 'panda' } },
+  pig:      { n: 'ブタ', size: 3, diet: 'omni', base: [5, 3, 4, 7, 9], sk: { gather: 1.5, mine: .8 },
+              sp: '鼻がよく、採集で食べ物を多めに見つける。大食い',
+              look: { body: '#f7b9c4', ears: 'droop', earC: '#f08da0', tail: 'curl', snout: 1 } },
+  sheep:    { n: 'ヒツジ', size: 2, diet: 'herb', base: [3, 4, 4, 5, 5], sk: {}, wool: 1,
+              sp: 'もこもこの毛のおかげで、よく眠れて元気の回復が早い',
+              look: { body: '#fffaf0', wool: 1, head: '#f2dcc6', ears: 'droop', earC: '#e8cdb3' } },
+  penguin:  { n: 'ペンギン', size: 2, diet: 'carn', swim: 1, base: [3, 3, 5, 5, 5], sk: { fish: 2.2, fight: .7 },
+              sp: '泳ぎと漁の名人（漁が2倍以上）。魚しか食べない',
+              look: { kind: 'penguin', body: '#3c4a5c', belly: '#ffffff' } },
+  capybara: { n: 'カピバラ', size: 3, diet: 'herb', swim: 1, base: [4, 4, 3, 7, 5], sk: {}, liked: 20,
+              sp: 'みんなに好かれる（はじめから仲よし度が高い）。泳げる',
+              look: { body: '#a87c55', ears: 'tiny', muzzle: '#8a6342', yuzu: 1 } },
+  tanuki:   { n: 'タヌキ', size: 2, diet: 'omni', base: [4, 5, 7, 5, 6], sk: { gather: 1.3 },
+              sp: 'なんでも食べられて器用',
+              look: { body: '#8a6b4e', belly: '#e8d9c4', ears: 'round', earIn: '#5a4636', mask: 'tanuki', tail: 'brush', tailTip: '#4a3a2c', muzzle: '#e8d9c4' } },
+  hedgehog: { n: 'ハリネズミ', size: 1, diet: 'omni', base: [3, 4, 5, 4, 3], sk: { fight: 1.1 }, spiky: 1,
+              sp: 'トゲがあるので、かみついた相手もケガをする',
+              look: { body: '#e8c9a0', spikes: '#8a6a4a', ears: 'tiny' } },
+  tiger:    { n: 'トラ', size: 4, diet: 'carn', hunts: 1, swim: 1, base: [9, 7, 4, 8, 8], sk: { fight: 1.7 },
+              sp: '最強クラスの戦闘力。泳げる。肉食',
+              look: { body: '#f4a340', belly: '#fff3e0', muzzle: '#fff3e0', ears: 'round', earIn: '#fff3e0', stripes: '#5b3a1e', tail: 'thin', tailTip: '#5b3a1e' } },
+};
+// 建築の得意・不得意（書いていない動物はふつう＝1）
+const BUILD_SK = { beaver: 1.8, tanuki: 1.4, dog: 1.1, bear: 1.1, rabbit: .7, squirrel: .6, turtle: .6, penguin: .6, hedgehog: .8, cat: .8 };
+for (const k in BUILD_SK) SP[k].sk.build = BUILD_SK[k];
+SP.tanuki.sp = 'なんでも食べられて器用。建築も得意';
+// 快適な気温（℃）：この範囲より寒いと「寒さ」、暑いと「暑さ」がたまる
+const COMFORT = { rabbit: [3, 28], lion: [12, 38], beaver: [-2, 28], bear: [-6, 26], squirrel: [0, 30], turtle: [15, 35], fox: [-2, 28], cat: [8, 32], dog: [3, 30], wolf: [-6, 27], panda: [0, 26], pig: [8, 32], sheep: [-4, 25], penguin: [-15, 22], capybara: [12, 34], tanuki: [0, 30], hedgehog: [8, 30], tiger: [8, 36] };
+for (const k in COMFORT) SP[k].comfort = COMFORT[k];
+SP.bear.hibernate = 1; SP.hedgehog.hibernate = 1;
+SP.bear.sp += '。冬は眠くなる'; SP.hedgehog.sp += '。冬は眠くなる';
+SP.penguin.sp += '。寒さにとても強いが暑さに弱い';
+SP.lion.sp += '。暑さに強く寒さに弱い';
+const SIZE_SCALE = [0, .82, .92, 1.02, 1.12, 1.22];
+const SIZE_N = ['', '小さい', 'やや小さい', 'ふつう', '大きい', 'とても大きい'];
+const DIET_N = { herb: '草食（木の実）', carn: '肉食（魚）', omni: '雑食（なんでも）' };
+const STAT_N = [['str', '力'], ['spd', '速さ'], ['dex', '器用さ'], ['hp', '体力'], ['app', '食欲']];
+const JOBS = { auto: 'おまかせ', chop: '木こり', gather: '採集', fish: '漁', mine: '石集め', build: '建築', explore: '探検' };
+const JOB_ICON = { chop: '🪓', gather: '🫐', fish: '🎣', mine: '⛏', build: '🔨', explore: '🧭', fight: '⚔', warm: '🔥', cool: '🌴' };
+const WORK_ACTS = new Set(['chop', 'gather', 'fish', 'mine', 'build']);
+
+// =====================================================
+// 建物
+// =====================================================
+const BINFO = {
+  fence: { n: '柵', code: 1, cost: { wood: 3 }, work: 5, hp: 40 },
+  gate:  { n: '門', code: 2, cost: { wood: 5 }, work: 7, hp: 50 },
+  house: { n: '家', code: 3, cost: { wood: 25, stone: 10 }, work: 30, hp: 90 },
+  fire:  { n: 'たき火', code: 4, cost: { wood: 8 }, work: 6, hp: 30 },
+  shade: { n: '日よけ', code: 5, cost: { wood: 6 }, work: 6, hp: 30 },
+};
+const NOW = () => performance.now() / 1000;
+const RES_N = { wood: '木', stone: '石' };
+const ROOF = ['#e57373', '#64b5f6', '#81c784', '#ffb74d', '#ba68c8', '#4db6ac'];
+
+const TRAITS = [
+  { n: 'はたらき者', d: '仕事が速い', work: 1.3, x: 'なまけ者' },
+  { n: 'なまけ者', d: '仕事がおそい', work: .7, x: 'はたらき者' },
+  { n: 'くいしんぼう', d: 'おなかがすきやすい', hunger: 1.35, x: '小食' },
+  { n: '小食', d: 'おなかがすきにくい', hunger: .7, x: 'くいしんぼう' },
+  { n: '人なつっこい', d: '仲よくなりやすい', social: 1.6, relInit: 8, x: '気むずかし' },
+  { n: '気むずかし', d: '仲よくなりにくい', social: .5, relInit: -8, x: '人なつっこい' },
+  { n: '俊足', d: '足が速い', speed: 1.2, x: 'のんびり屋' },
+  { n: 'のんびり屋', d: '足がおそいが疲れにくい', speed: .8, energy: .8, x: '俊足' },
+  { n: '勇敢', d: '弱くても戦う', brave: 1, fight: 1.15, x: 'こわがり' },
+  { n: 'こわがり', d: '戦いから逃げる', coward: 1, fight: .7, x: '勇敢' },
+  { n: 'タフ', d: '最大HPが多い', hp: 1.3 },
+];
+const NAMES = ['ミミ', 'レオ', 'カジ', 'ドン', 'ポコ', 'ノロ', 'モモ', 'チャチャ', 'ゴン', 'ピノ', 'ルル', 'ココ', 'タロ', 'ハナ', 'ソラ', 'キキ', 'マロ', 'ポン', 'ジジ', 'ラン', 'リク', 'ユキ', 'コテツ', 'ムギ', 'クウ', 'ベル', 'ニコ', 'フク', 'ゴマ', 'ナナ', 'トト', 'ミント', 'あずき', 'きなこ', 'だいず', 'おもち', 'こむぎ', 'ちくわ', 'はんぺん', 'つくね', 'ぽてと', 'まめ', 'くるみ', 'もなか', 'すだち', 'ゆず', 'らむね', 'ぷりん', 'わさび', 'しらす', 'のり', 'てん', 'ごろう', 'はち', 'ぺこ', 'ぶん', 'ちび', 'ボス', 'ジロ', 'サブ'];
+
+// =====================================================
+// 動物の絵（足もとが (x, y)）
+// =====================================================
+function face(ctx, x, y, g, mood, eyeC) {
+  ctx.strokeStyle = OL; ctx.lineWidth = 1.4;
+  if (mood === 'sly') {
+    ctx.beginPath();
+    ctx.moveTo(x - g - 1.6, y - .8); ctx.lineTo(x - g + 1.6, y + .6);
+    ctx.moveTo(x + g + 1.6, y - .8); ctx.lineTo(x + g - 1.6, y + .6);
+    ctx.stroke();
+  } else if (mood === 'sleep') {
+    ctx.beginPath(); ctx.arc(x - g, y - .5, 1.5, .2, Math.PI - .2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(x + g, y - .5, 1.5, .2, Math.PI - .2); ctx.stroke();
+  } else if (mood === 'hurt') {
+    [-1, 1].forEach(s => {
+      ctx.beginPath(); ctx.moveTo(x + s * g - 1.4 * s, y - 1.2); ctx.lineTo(x + s * g + 1.2 * s, y); ctx.lineTo(x + s * g - 1.4 * s, y + 1.2); ctx.stroke();
+    });
+  } else if (eyeC) {
+    dot(ctx, x - g, y, 1.6, '#fff'); dot(ctx, x + g, y, 1.6, '#fff');
+    dot(ctx, x - g, y, .8, '#222'); dot(ctx, x + g, y, .8, '#222');
+  } else {
+    dot(ctx, x - g, y, 1.35, OL); dot(ctx, x + g, y, 1.35, OL);
+    if (mood === 'scared') { dot(ctx, x - g + .4, y - .5, .45, '#fff'); dot(ctx, x + g + .4, y - .5, .45, '#fff'); }
+  }
+  ctx.lineWidth = 1.7;
+  dot(ctx, x - g - 2.6, y + 2.6, 1.8, 'rgba(255,130,130,.5)');
+  dot(ctx, x + g + 2.6, y + 2.6, 1.8, 'rgba(255,130,130,.5)');
+}
+function drawTail(ctx, L, b, t, ph) {
+  const tl = L.tail; if (!tl) return;
+  const c = L.tailC || L.body;
+  if (tl === 'puff') E(ctx, -9.5, -6 + b, 3.6, 3.6, c);
+  else if (tl === 'tuft') {
+    const sw = Math.sin(t * 3 + ph) * 3;
+    ctx.beginPath(); ctx.moveTo(-7, -5); ctx.quadraticCurveTo(-16, -4, -15 + sw, -15);
+    ctx.strokeStyle = OL; ctx.lineWidth = 4.5; ctx.stroke();
+    ctx.strokeStyle = c; ctx.lineWidth = 2; ctx.stroke(); ctx.lineWidth = 1.7;
+    E(ctx, -15 + sw, -16, 3, 3.5, L.tailTip);
+  } else if (tl === 'flat') E(ctx, -11, -3, 7.5, 3.6, c, -.35);
+  else if (tl === 'fluffy') {
+    const sw = Math.sin(t * 2.5 + ph) * .08;
+    E(ctx, -9, -15, 6.5, 11.5, c, -.35 + sw);
+    E(ctx, -9, -15, 3, 7.5, L.tailTip, -.35 + sw, false);
+  } else if (tl === 'brush') {
+    const sw = Math.sin(t * 2 + ph) * .08;
+    E(ctx, -12, -8, 8.5, 4.4, c, .5 + sw);
+    E(ctx, -18.2, -11.4, 3, 2.6, L.tailTip, .5 + sw, false);
+  } else if (tl === 'thin') {
+    const sw = Math.sin(t * 3 + ph) * 2;
+    ctx.beginPath(); ctx.moveTo(-7, -5); ctx.quadraticCurveTo(-17, -6, -14 + sw, -18);
+    ctx.strokeStyle = OL; ctx.lineWidth = 4.5; ctx.stroke();
+    ctx.strokeStyle = c; ctx.lineWidth = 2.4; ctx.stroke(); ctx.lineWidth = 1.7;
+    if (L.tailTip) dot(ctx, -14 + sw, -18, 1.7, L.tailTip);
+  } else if (tl === 'curl') {
+    ctx.beginPath(); ctx.arc(-11, -8 + b, 2.5, 0, Math.PI * 1.6);
+    ctx.strokeStyle = OL; ctx.lineWidth = 3.5; ctx.stroke();
+    ctx.strokeStyle = c; ctx.lineWidth = 1.6; ctx.stroke(); ctx.lineWidth = 1.7;
+  } else if (tl === 'short') {
+    const w = Math.sin(t * 12 + ph) * .35;
+    E(ctx, -11, -10 + b, 5, 2.8, c, .6 + w);
+  }
+}
+function drawEars(ctx, L, b, layer) {
+  const e = L.ears; const c = L.earC || L.head || L.body;
+  if (layer === 'back') {
+    if (e === 'long') {
+      E(ctx, -4, -33 + b, 3.4, 9, c, -.15); E(ctx, 4, -33 + b, 3.4, 9, c, .15);
+      E(ctx, -4, -33 + b, 1.5, 6, L.earIn, -.15, false); E(ctx, 4, -33 + b, 1.5, 6, L.earIn, .15, false);
+    } else if (e === 'round') {
+      [-1, 1].forEach(s => { E(ctx, s * 6.8, -27 + b, 3.4, 3.4, c); if (L.earIn) E(ctx, s * 6.8, -27 + b, 1.7, 1.7, L.earIn, 0, false); });
+    } else if (e === 'pointy') {
+      [-1, 1].forEach(s => {
+        ctx.beginPath(); ctx.moveTo(s * 2.5, -26 + b); ctx.lineTo(s * 6.8, -34 + b); ctx.lineTo(s * 8.6, -22 + b); ctx.closePath();
+        ctx.fillStyle = c; ctx.fill(); ctx.strokeStyle = OL; ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(s * 4, -26 + b); ctx.lineTo(s * 6.6, -31 + b); ctx.lineTo(s * 7.6, -24 + b); ctx.closePath();
+        ctx.fillStyle = L.earIn || c; ctx.fill();
+      });
+    } else if (e === 'tiny') {
+      [-1, 1].forEach(s => E(ctx, s * 6.3, -26.5 + b, 2.4, 2.4, c));
+    }
+  } else if (e === 'droop') {
+    [-1, 1].forEach(s => E(ctx, s * 8.4, -20 + b, 3, 5.8, c, s * -.35));
+  }
+}
+function drawSpikes(ctx, L, b) {
+  for (let k = 0; k < 13; k++) {
+    const a = Math.PI * (.85 + k * .1);
+    const cx = 0, cy = -13 + b;
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(a - .13) * 10, cy + Math.sin(a - .13) * 10);
+    ctx.lineTo(cx + Math.cos(a) * 17, cy + Math.sin(a) * 15);
+    ctx.lineTo(cx + Math.cos(a + .13) * 10, cy + Math.sin(a + .13) * 10);
+    ctx.closePath(); ctx.fillStyle = L.spikes; ctx.fill(); ctx.strokeStyle = OL; ctx.stroke();
+  }
+}
+function drawTurtle(ctx, L, b, t, mood) {
+  const step = Math.sin(t * 1.5) * 1;
+  E(ctx, -10, -2 + step, 3.2, 2.6, L.body); E(ctx, 10, -2 - step, 3.2, 2.6, L.body);
+  E(ctx, 0, -9, 14, 9.5, L.shell); E(ctx, 0, -9, 10, 6.5, null);
+  [[-8, -11], [8, -11], [0, -15.5], [-4.5, -5.5], [4.5, -5.5]].forEach(([px, py]) => E(ctx, px, py, 2.6, 1.8, shade(L.shell, -.15), 0, false));
+  E(ctx, 0, -6 + b, 6.5, 6, L.body);
+  face(ctx, 0, -7 + b, 2.6, mood);
+  ctx.lineWidth = 1.1; ctx.beginPath(); ctx.arc(0, -4.5 + b, 1.5, .3, Math.PI - .3); ctx.stroke(); ctx.lineWidth = 1.7;
+}
+function drawPenguin(ctx, L, b, t, mood) {
+  const wing = Math.sin(t * 6) * .15;
+  E(ctx, -10, -9 + b, 2.6, 6.5, L.body, .45 + wing); E(ctx, 10, -9 + b, 2.6, 6.5, L.body, -.45 - wing);
+  E(ctx, -4, -.8, 3.2, 1.8, '#f5a742'); E(ctx, 4, -.8, 3.2, 1.8, '#f5a742');
+  E(ctx, 0, -12 + b, 10, 13, L.body);
+  E(ctx, 0, -8 + b, 6.8, 8.5, L.belly, 0, false);
+  E(ctx, 0, -18.5 + b, 6.6, 5.4, L.belly, 0, false);
+  face(ctx, 0, -19.5 + b, 3, mood);
+  ctx.beginPath(); ctx.moveTo(-2, -17 + b); ctx.lineTo(2, -17 + b); ctx.lineTo(0, -14.8 + b); ctx.closePath();
+  ctx.fillStyle = '#f5a742'; ctx.fill(); ctx.strokeStyle = OL; ctx.lineWidth = 1.2; ctx.stroke(); ctx.lineWidth = 1.7;
+}
+// o: { mood, flip, phase, walk, work, sleep }
+function drawAnimal(ctx, L, x, y, s, t, o = {}) {
+  const mood = o.mood || 'normal', ph = o.phase || 0;
+  ctx.save(); ctx.translate(x, y); if (o.flip) ctx.scale(-1, 1); ctx.scale(s, s);
+  ctx.lineWidth = 1.7; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  shadow(ctx, 0, 1, 11, 3);
+  if (o.sleep) ctx.scale(1.12, .8);
+  let b = o.walk ? -Math.abs(Math.sin(t * 10 + ph)) * 2.5 : o.work ? Math.sin(t * 16 + ph) * 1 : Math.sin(t * 2 + ph) * .6;
+  if (o.sleep) b = Math.sin(t * 1.5 + ph) * .4;
+  if (L.kind === 'turtle') { drawTurtle(ctx, L, b, t, mood); ctx.restore(); return; }
+  if (L.kind === 'penguin') { drawPenguin(ctx, L, b, t, mood); ctx.restore(); return; }
+  drawTail(ctx, L, b, t, ph);
+  if (L.spikes) drawSpikes(ctx, L, b);
+  if (L.wool) for (let k = 0; k < 9; k++) { const a = k / 9 * Math.PI * 2; E(ctx, Math.cos(a) * 9, -8 + b + Math.sin(a) * 7, 4.5, 4.5, L.body); }
+  E(ctx, 0, -8 + b, 10, 8.5, L.body, 0, !L.wool);
+  if (L.belly) E(ctx, 0, -6.5 + b, 6, 6, L.belly, 0, false);
+  if (L.mask === 'panda') E(ctx, 0, -12 + b, 8.4, 3.2, '#333333', 0, false);
+  if (L.stripes) {
+    ctx.strokeStyle = L.stripes; ctx.lineWidth = 1.5;
+    [-5, 0, 5].forEach(sx => { ctx.beginPath(); ctx.moveTo(sx - 1, -15 + b); ctx.lineTo(sx + 1, -11 + b); ctx.stroke(); });
+    ctx.lineWidth = 1.7;
+  }
+  const fc = L.feet || shade(L.body, -.15);
+  E(ctx, -4.5, -1, 3.5, 2.2, fc); E(ctx, 4.5, -1, 3.5, 2.2, fc);
+  drawEars(ctx, L, b, 'back');
+  if (L.mane) {
+    for (let k = 0; k < 11; k++) { const a = k / 11 * Math.PI * 2; E(ctx, Math.cos(a) * 10, -21 + b + Math.sin(a) * 10, 5.2, 5.2, L.mane); }
+    E(ctx, 0, -21 + b, 11, 11, L.mane, 0, false);
+  }
+  if (L.wool) for (let k = 0; k < 7; k++) { const a = Math.PI + k / 6 * Math.PI; E(ctx, Math.cos(a) * 8, -24 + b + Math.sin(a) * 5, 3.6, 3.6, L.body); }
+  E(ctx, 0, -20 + b, 8.8, 8.4, L.head || L.body);
+  if (L.mask === 'panda') { E(ctx, -3.8, -20.5 + b, 2.6, 3.2, '#333333', .5, false); E(ctx, 3.8, -20.5 + b, 2.6, 3.2, '#333333', -.5, false); }
+  if (L.mask === 'tanuki') { E(ctx, -3.6, -20.8 + b, 3.2, 2.4, '#4a3a2c', 0, false); E(ctx, 3.6, -20.8 + b, 3.2, 2.4, '#4a3a2c', 0, false); }
+  if (L.stripes) {
+    ctx.strokeStyle = L.stripes; ctx.lineWidth = 1.4;
+    [[-3, -27], [0, -28], [3, -27]].forEach(([sx, sy]) => { ctx.beginPath(); ctx.moveTo(sx, sy + b); ctx.lineTo(sx * .8, sy + 3 + b); ctx.stroke(); });
+    ctx.lineWidth = 1.7;
+  }
+  drawEars(ctx, L, b, 'front');
+  if (L.muzzle) E(ctx, 0, -16.8 + b, 4.6, 3.3, L.muzzle, 0, false);
+  face(ctx, 0, -21 + b, 3.4, mood, (L.mask === 'panda' || L.mask === 'tanuki') ? '#fff' : null);
+  if (L.snout) {
+    E(ctx, 0, -16.8 + b, 3.6, 2.7, '#f49aae');
+    dot(ctx, -1.2, -16.8 + b, .7, OL); dot(ctx, 1.2, -16.8 + b, .7, OL);
+  } else {
+    dot(ctx, 0, -18.3 + b, 1.4, L.nose || OL);
+    ctx.strokeStyle = OL; ctx.lineWidth = 1.1;
+    ctx.beginPath(); ctx.arc(-1.2, -17 + b, 1.2, .3, Math.PI - .3); ctx.stroke();
+    ctx.beginPath(); ctx.arc(1.2, -17 + b, 1.2, .3, Math.PI - .3); ctx.stroke();
+    ctx.lineWidth = 1.7;
+  }
+  if (L.teeth) {
+    rr(ctx, -2.2, -16 + b, 4.4, 4.2, 1); ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 1.1; ctx.strokeStyle = OL; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, -16 + b); ctx.lineTo(0, -11.8 + b); ctx.stroke(); ctx.lineWidth = 1.7;
+  }
+  if (L.yuzu) { E(ctx, 1, -30 + b, 4, 3.6, '#ffb733'); E(ctx, 1.8, -33.6 + b, 1.8, .9, '#5fae4a', .3, false); }
+  ctx.restore();
+}
+
+// =====================================================
+// 個体（1匹ずつの能力・性格）
+// =====================================================
+let nextId = 1;
+function tint(look, v) {
+  const L = { ...look };
+  for (const k of ['body', 'belly', 'head', 'muzzle', 'tailC', 'shell', 'mane']) if (L[k] && L[k] !== '#ffffff') L[k] = shade(L[k], v);
+  return L;
+}
+function makeAnimal(key, used) {
+  const sp = SP[key];
+  const st = sp.base.map(b => clamp(Math.round(b + rand(-2.4, 2.4)), 1, 10));
+  const traits = [];
+  const cnt = Math.random() < .55 ? 2 : 1;
+  let guard = 0;
+  while (traits.length < cnt && guard++ < 50) {
+    const t = pick(TRAITS);
+    if (traits.includes(t) || traits.some(o => o.n === t.x)) continue;
+    traits.push(t);
+  }
+  let name; do { name = pick(NAMES); } while (used.has(name)); used.add(name);
+  const a = {
+    id: nextId++, sp: key, name, traits,
+    st: { str: st[0], spd: st[1], dex: st[2], hp: st[3], app: st[4] },
+    look: tint(sp.look, rand(-.12, .12)), phase: Math.random() * 6,
+    x: 0, y: 0, ox: rand(-6, 6), oy: rand(-5, 5),
+    hunger: rand(75, 95), energy: rand(80, 100), job: 'auto', flip: false,
+    path: null, onArrive: null, act: null, carry: null, sleeping: false, dead: false, idle: 0, task: null,
+  };
+  a.maxHp = Math.round((20 + a.st.hp * 8) * tr(a, 'hp'));
+  a.hp = a.maxHp;
+  // 歩ける場所：陸（泳げる動物は浅い海も）。柵と家は通れない、門は通れる
+  a.walk = (x, y) => {
+    if (x < 0 || y < 0 || x >= MW || y >= MH) return false;
+    const i = y * MW + x, b = bld[i];
+    if (b === 1 || b === 3) return false;
+    const t = ter[i]; return t >= 2 || (!!sp.swim && t === 1);
+  };
+  return a;
+}
+function tr(a, k) { let m = 1; for (const t of a.traits) if (typeof t[k] === 'number') m *= t[k]; return m; }
+const hasT = (a, k) => a.traits.some(t => t[k]);
+function eff(a, job) {
+  const s = a.st, k = SP[a.sp].sk[job] ?? 1;
+  let v;
+  switch (job) {
+    case 'chop': v = (s.str * .6 + s.dex * .4) / 5; break;
+    case 'gather': v = (s.dex * .5 + s.spd * .5) / 5; break;
+    case 'fish': v = (s.dex * .7 + s.spd * .3) / 5; break;
+    case 'mine': v = (s.str * .8 + s.dex * .2) / 5; break;
+    case 'build': v = (s.dex * .6 + s.str * .4) / 5; break;
+    case 'explore': return s.spd / 5 * tr(a, 'speed');
+    case 'fight': return (s.str * .7 + s.hp * .3) / 5 * k * tr(a, 'fight');
+  }
+  return v * k * tr(a, 'work');
+}
+const stars = v => clamp(Math.round(v * 2.3), 1, 5);
+const starStr = v => '★'.repeat(stars(v)) + '☆'.repeat(5 - stars(v));
+const spd = a => (0.9 + a.st.spd * .17) * tr(a, 'speed') * T;
+const isFighter = a => !hasT(a, 'coward') && (eff(a, 'fight') >= 1.0 || hasT(a, 'brave'));
+const isPreyOf = (h, p) => !!SP[h.sp].hunts && !SP[p.sp].hunts && SP[p.sp].size < SP[h.sp].size && h !== p;
+function dietFoods(a) {
+  const d = SP[a.sp].diet;
+  if (d === 'herb') return ['berry'];
+  if (d === 'carn') return ['fish'];
+  return G.stock.berry >= G.stock.fish ? ['berry', 'fish'] : ['fish', 'berry'];
+}
+
+// =====================================================
+// 島づくり
+// =====================================================
+const ter = new Uint8Array(MW * MH);      // 0 深い海 / 1 浅い海 / 2 砂浜 / 3 草地 / 4 岩場
+const obj = new Array(MW * MH).fill(null);
+const explored = new Uint8Array(MW * MH);
+const bld = new Uint8Array(MW * MH);      // 完成した建物 0 なし / 1 柵 / 2 門 / 3 家
+const DX = [1, -1, 0, 0], DY = [0, 0, 1, -1];
+function h3(x, y, s) { return hash(x + s * 7919, y - s * 104729); }
+function vnoise(x, y, s) {
+  const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+  const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+  const a = h3(xi, yi, s), b = h3(xi + 1, yi, s), c = h3(xi, yi + 1, s), d = h3(xi + 1, yi + 1, s);
+  return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+}
+function fbm(x, y, s, o) { let sum = 0, amp = 1, f = 1, n = 0; for (let i = 0; i < o; i++) { sum += vnoise(x * f, y * f, s + i * 31) * amp; n += amp; amp *= .5; f *= 2; } return sum / n; }
+
+function genMap(seed) {
+  for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) {
+    const i = y * MW + x;
+    const nx = (x - MW / 2) / (MW / 2), ny = (y - MH / 2) / (MH / 2);
+    const d = Math.sqrt(nx * nx + ny * ny);
+    const e = fbm(x / 30, y / 30, seed, 5);
+    const h = e + .24 - d * d * .95;
+    let t = h < .33 ? 0 : h < .4 ? 1 : h < .445 ? 2 : 3;
+    if (t === 3 && h > .6 && fbm(x / 16, y / 16, seed + 55, 3) > .56) t = 4;
+    if (x < 3 || y < 3 || x > MW - 4 || y > MH - 4) t = 0;
+    ter[i] = t;
+    obj[i] = null;
+    const r = hash(x * 3 + seed, y * 5 - seed);
+    if (t === 3) {
+      const f = fbm(x / 11, y / 11, seed + 99, 3);
+      if (f > .57 && r < .7) obj[i] = { k: 'tree' };
+      else if (r < .03) obj[i] = { k: 'tree' };
+      else if (r < .06) obj[i] = { k: 'bush', berries: 3 };
+      else if (r < .066) obj[i] = { k: 'rock', amt: 5 };
+    } else if (t === 2) {
+      if (r < .045) obj[i] = { k: 'palm' };
+    } else if (t === 4) {
+      if (r < .2) obj[i] = { k: 'rock', amt: 6 };
+      else if (r < .25) obj[i] = { k: 'tree' };
+    }
+  }
+}
+// 浅い海を泳がずに歩ける範囲をかぞえる
+const landWalk = (x, y) => x >= 0 && y >= 0 && x < MW && y < MH && ter[y * MW + x] >= 2;
+function findCamp() {
+  const cx = MW / 2 | 0, cy = MH / 2 | 0;
+  for (let r = 0; r < 60; r++) {
+    for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+      if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+      const x = cx + dx, y = cy + dy;
+      let ok = true;
+      for (let yy = -3; yy <= 3 && ok; yy++) for (let xx = -3; xx <= 3 && ok; xx++) {
+        const t = ter[(y + yy) * MW + x + xx];
+        if (t !== 3) ok = false;
+      }
+      if (ok) return [x, y];
+    }
+  }
+  return null;
+}
+
+// =====================================================
+// 道さがし（マスを順番に広げて探す）
+// =====================================================
+const BQ = new Int32Array(MW * MH), BP = new Int32Array(MW * MH), BS = new Uint32Array(MW * MH), BD = new Uint16Array(MW * MH);
+let bstamp = 0;
+function bfs(sx, sy, walk, goal, maxN = 30000, maxD = 9999) {
+  if (sx < 0 || sy < 0 || sx >= MW || sy >= MH) return null;
+  bstamp++;
+  let h = 0, tl = 0;
+  const s = sy * MW + sx;
+  BS[s] = bstamp; BP[s] = -1; BD[s] = 0; BQ[tl++] = s;
+  while (h < tl) {
+    const i = BQ[h++];
+    const x = i % MW, y = (i - x) / MW;
+    if (goal(x, y, i, BD[i])) {
+      const p = []; let k = i;
+      while (k !== s) { p.push(k); k = BP[k]; }
+      p.reverse(); return p;
+    }
+    if (h > maxN) break;
+    if (BD[i] >= maxD) continue;
+    for (let d = 0; d < 4; d++) {
+      const nx = x + DX[d], ny = y + DY[d];
+      if (nx < 0 || ny < 0 || nx >= MW || ny >= MH) continue;
+      const j = ny * MW + nx;
+      if (BS[j] === bstamp || !walk(nx, ny)) continue;
+      BS[j] = bstamp; BP[j] = i; BD[j] = BD[i] + 1; BQ[tl++] = j;
+    }
+  }
+  return null;
+}
+const tileOf = e => [Math.floor(e.x / T), Math.floor(e.y / T)];
+const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+function isShore(x, y, i) {
+  if (ter[i] < 2) return false;
+  for (let d = 0; d < 4; d++) { const nx = x + DX[d], ny = y + DY[d]; if (ter[ny * MW + nx] <= 1) return true; }
+  return false;
+}
+
+// =====================================================
+// ゲームの状態
+// =====================================================
+const G = {
+  day: 1, time: 7 / 24, speed: 1, stock: { wood: 0, stone: 0, berry: 14, fish: 10 },
+  animals: [], crabs: [], graves: [], fx: [], rel: new Map(), cx: 0, cy: 0,
+  selected: null, alarm: false, raidDay: 0, morningDay: 1, tick: 0, over: false,
+  builds: new Map(), houseNo: 0, season: 0, weather: '晴れ', temp: 15,
+  landTotal: 0, landExplored: 0,
+};
+let state = 'start';
+const hour = () => G.time * 24;
+const isNight = () => { const h = hour(); return h >= 20 || h < 5; };
+const campPos = () => ({ x: (G.cx + .5) * T, y: (G.cy + .5) * T });
+const relKey = (a, b) => a.id < b.id ? a.id + '-' + b.id : b.id + '-' + a.id;
+const getRel = (a, b) => G.rel.get(relKey(a, b)) ?? 50;
+function addRel(a, b, v) {
+  if (a === b) return;
+  if (v > 0) v *= Math.sqrt(tr(a, 'social') * (SP[a.sp].social || 1) * tr(b, 'social') * (SP[b.sp].social || 1));
+  G.rel.set(relKey(a, b), clamp(getRel(a, b) + v, 0, 100));
+}
+function initRel(a, b) {
+  let v = 50 + rand(-8, 8);
+  if (a.sp === b.sp) v += 15;
+  if (isPreyOf(a, b) || isPreyOf(b, a)) v = rand(22, 34);
+  for (const t of [...a.traits, ...b.traits]) if (t.relInit) v += t.relInit;
+  if (SP[a.sp].liked || SP[b.sp].liked) v += 20;
+  G.rel.set(relKey(a, b), clamp(v, 5, 95));
+}
+const alive = () => G.animals.filter(a => !a.dead);
+
+// ---------- 季節・天気・気温 ----------
+const SEASON_LEN = 3;   // 1つの季節の日数（1年＝12日）
+const SEASONS = [
+  { n: '春', icon: '🌸', base: 17, berry: 1.3, fish: 1, raid: 1, weather: [['晴れ', 60], ['くもり', 25], ['雨', 15]],
+    msg: '🌸 春になりました！ 木の実がよく実ります' },
+  { n: '夏', icon: '🌻', base: 29, berry: 1, fish: 1.2, raid: 1.25, weather: [['晴れ', 50], ['猛暑', 25], ['くもり', 10], ['雨', 15]],
+    msg: '🌻 夏になりました！ 暑さに弱い動物は、木陰・日よけ・水辺で休ませてあげよう。カニも増えます' },
+  { n: '秋', icon: '🍁', base: 14, berry: 1.8, fish: 1, raid: 1, weather: [['晴れ', 50], ['くもり', 30], ['雨', 20]],
+    msg: '🍁 秋になりました！ 木の実がたくさん実ります。冬にそなえて食べ物をためよう' },
+  { n: '冬', icon: '⛄', base: 0, berry: 0, fish: .6, raid: .5, weather: [['晴れ', 40], ['くもり', 25], ['雪', 35]],
+    msg: '⛄ 冬になりました！ 木の実が実らず、魚も減ります。カメやカピバラなど寒さに弱い動物は、家に住ませてあげよう' },
+];
+const WEATHER = { '晴れ': { icon: '☀', dt: 0 }, 'くもり': { icon: '☁', dt: -1 }, '雨': { icon: '☔', dt: -3 }, '猛暑': { icon: '🥵', dt: 6 }, '雪': { icon: '❄', dt: -2 } };
+const dayF = () => (G.day - 1) + G.time;
+const seasonIdx = () => Math.floor(dayF() / SEASON_LEN) % 4;
+const seasonDay = () => Math.floor(dayF()) % SEASON_LEN + 1;
+const yearN = () => Math.floor(dayF() / (SEASON_LEN * 4)) + 1;
+function baseTemp() {   // 季節の気温を少しずつ変化させる
+  const sp = dayF() / SEASON_LEN - .25;
+  const s0 = Math.floor(sp), f = sp - s0;
+  const a = SEASONS[((s0 % 4) + 4) % 4].base, b = SEASONS[(((s0 + 1) % 4) + 4) % 4].base;
+  return a + (b - a) * f;
+}
+function airTemp() {    // 15時ごろがいちばん暖かく、3時ごろがいちばん寒い
+  return baseTemp() + 5 * Math.sin((hour() - 9) / 24 * Math.PI * 2) + WEATHER[G.weather].dt;
+}
+function rollWeather() {
+  const list = SEASONS[seasonIdx()].weather;
+  let r = Math.random() * list.reduce((s, w) => s + w[1], 0);
+  for (const [n, w] of list) { r -= w; if (r <= 0) return n; }
+  return list[0][0];
+}
+function onSeasonChange(s) {
+  G.season = s;
+  chunkCache.clear(); buildMini();
+  G.weather = rollWeather();
+  if (s === 0 && yearN() > 1) addLog(`🎉 ${yearN()}年目に入りました！ 島に来て${G.day - 1}日たちました`, 'good');
+  addLog(SEASONS[s].msg, 'good');
+  removeAlert('season');
+  addAlert('season', null, null, SEASONS[s].msg, 'warn');
+  setTimeout(() => removeAlert('season'), 15000);
+}
+// 暖かい場所（キャンプの焚き火と、建てたたき火）
+function heatSources() {
+  const l = [campPos()];
+  for (const b of G.builds.values()) if (b.done && b.type === 'fire') l.push({ x: (b.idx % MW + .5) * T, y: (Math.floor(b.idx / MW) + .5) * T });
+  return l;
+}
+function shadeNear(x, y) {
+  for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+    const b = G.builds.get((y + dy) * MW + x + dx);
+    if (b && b.done && b.type === 'shade') return true;
+  }
+  return false;
+}
+function treeNear(x, y) {
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+    const o = obj[(y + dy) * MW + x + dx];
+    if (o && (o.k === 'tree' || o.k === 'palm')) return true;
+  }
+  return false;
+}
+// その動物が感じている気温
+function feltTemp(a) {
+  const air = G.temp; let t = air;
+  const [x, y] = tileOf(a), i = y * MW + x;
+  if (a.inHouse) { if (t < 16) t = Math.min(16, t + 10); else if (t > 26) t -= 6; }
+  else {
+    let fire = 0;
+    for (const s of heatSources()) { const d = dist(a, s) / T; if (d < 5) fire = Math.max(fire, 16 * (1 - d / 5)); }
+    t += fire;
+    if (!isNight()) { if (shadeNear(x, y)) t -= 7; else if (treeNear(x, y)) t -= 3; }
+    if (ter[i] === 1) t -= 7; else if (ter[i] >= 2 && isShore(x, y, i)) t -= 1.5;
+    if (G.weather === '雨' || G.weather === '雪') t -= 1;   // ぬれて冷える
+  }
+  if (air < 15) {   // 寒いときは、仲間とくっつくと暖かい
+    let n = 0;
+    for (const o of G.animals) if (o !== a && !o.dead && o.inHouse === a.inHouse && dist(o, a) < 1.6 * T) n++;
+    t += Math.min(6, n * 2);
+  }
+  return t;
+}
+const workMul = a => 1 - ((a.cold || 0) > 30 ? .2 : 0) - ((a.heat || 0) > 30 ? .2 : 0);
+
+// ---------- 雲（未探検） ----------
+const fogCv = document.createElement('canvas'); fogCv.width = MW; fogCv.height = MH;
+const fogCtx = fogCv.getContext('2d');
+function reveal(tx, ty, r) {
+  const r2 = r * r;
+  for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+    if (dx * dx + dy * dy > r2) continue;
+    const x = tx + dx, y = ty + dy;
+    if (x < 0 || y < 0 || x >= MW || y >= MH) continue;
+    const i = y * MW + x;
+    if (explored[i]) continue;
+    explored[i] = 1; fogCtx.clearRect(x, y, 1, 1);
+    if (ter[i] >= 2) G.landExplored++;
+  }
+}
+
+// ---------- ログ・お知らせ ----------
+const logEl = document.getElementById('log');
+function addLog(text, cls = '') {
+  const d = document.createElement('div'); d.textContent = text; if (cls) d.className = cls;
+  logEl.prepend(d);
+  while (logEl.children.length > 6) logEl.lastChild.remove();
+  setTimeout(() => { d.style.transition = 'opacity 1s'; d.style.opacity = '0'; setTimeout(() => d.remove(), 1000); }, 14000);
+}
+const alertsEl = document.getElementById('alerts');
+const alerts = [];
+function addAlert(type, h, p, text, cls = '') {
+  if (alerts.some(x => x.type === type && x.h === h)) return;
+  const el = document.createElement('div'); el.className = 'alert ' + cls;
+  const sp = document.createElement('span'); sp.textContent = text; el.appendChild(sp);
+  const al = { type, h, p, el };
+  if (h && (type === 'chase' || type === 'glare')) {
+    const b = document.createElement('button');
+    b.onclick = () => { feed(h); };
+    el.appendChild(b); al.btn = b;
+    const v = document.createElement('button'); v.textContent = '👀 見る';
+    v.onclick = () => { cam.x = h.x; cam.y = h.y; select(h); };
+    el.appendChild(v);
+  }
+  alertsEl.appendChild(el); alerts.push(al);
+}
+function removeAlert(type, h) {
+  for (let k = alerts.length - 1; k >= 0; k--) if (alerts[k].type === type && (h === undefined || alerts[k].h === h)) { alerts[k].el.remove(); alerts.splice(k, 1); }
+}
+function updateAlerts() {
+  for (const al of alerts) if (al.btn) {
+    const f = dietFoods(al.h).find(k => G.stock[k] > 0);
+    al.btn.textContent = f ? `${f === 'fish' ? '🐟 魚' : '🫐 木の実'}をあげる（のこり${G.stock[f]}）` : '食べ物がない！';
+    al.btn.disabled = !f;
+  }
+}
+function fx(x, y, text, col = '#3b2f25') { G.fx.push({ x, y, text, col, life: 1.6 }); }
+
+// =====================================================
+// 動物の行動
+// =====================================================
+function interrupt(a) {
+  release(a);
+  a.path = null; a.onArrive = null; a.act = null; a.task = null;
+}
+function release(a) { if (a.resIdx != null) { const o = obj[a.resIdx]; if (o && o.res === a.id) o.res = null; a.resIdx = null; } }
+function setPath(a, p, onArrive) { a.path = p; a.onArrive = onArrive; }
+const findPath = (a, goal, maxN) => { const [x, y] = tileOf(a); return bfs(x, y, a.walk, goal, maxN); };
+const nearCamp = (x, y) => Math.abs(x - G.cx) <= 1 && Math.abs(y - G.cy) <= 1;
+
+function moveToward(e, tx, ty, step, walk) {
+  const dx = tx - e.x, dy = ty - e.y, l = Math.hypot(dx, dy);
+  if (l < .5) return true;
+  const st = Math.min(step, l);
+  const base = Math.atan2(dy, dx);
+  for (const off of [0, .5, -.5, 1, -1, 1.6, -1.6]) {
+    const a = base + off;
+    const nx = e.x + Math.cos(a) * st, ny = e.y + Math.sin(a) * st;
+    if (walk(Math.floor(nx / T), Math.floor(ny / T))) { e.x = nx; e.y = ny; if (Math.abs(dx) > .5) e.flip = dx < 0; e.moving = true; return false; }
+  }
+  return false;
+}
+function followPath(e, step) {
+  while (e.path && e.path.length) {
+    const i = e.path[0];
+    const tx = (i % MW + .5) * T + (e.ox || 0), ty = (Math.floor(i / MW) + .5) * T + (e.oy || 0);
+    const dx = tx - e.x, dy = ty - e.y, l = Math.hypot(dx, dy);
+    if (l <= step) { e.x = tx; e.y = ty; step -= l; e.path.shift(); continue; }
+    e.x += dx / l * step; e.y += dy / l * step;
+    if (Math.abs(dx) > .5) e.flip = dx < 0;
+    e.moving = true;
+    return;
+  }
+  if (e.path) { e.path = null; const f = e.onArrive; e.onArrive = null; if (f) f(); }
+}
+
+function think(a) {
+  if (a.hunger < 40) return goEat(a);   // おなかがすいていたら、荷物運びより食事を優先
+  if (a.carry) return deliver(a);
+  if (a.cold > 45) return goWarm(a);
+  if (a.heat > 45) return goCool(a);
+  if (isNight() || a.energy < 12 || a.hp < a.maxHp * .35) return goSleep(a);
+  return goWork(a);
+}
+// 寒いときは火にあたりに行く（夜で家があれば家へ）
+function goWarm(a) {
+  if (isNight() && a.home && a.home.done && G.builds.get(a.home.idx) === a.home) return goSleep(a);
+  a.task = 'warm';
+  const src = heatSources();
+  const p = findPath(a, (x, y) => src.some(s => Math.abs((x + .5) * T - s.x) <= 1.6 * T && Math.abs((y + .5) * T - s.y) <= 1.6 * T), 40000);
+  if (!p) return goSleep(a);
+  a.restT = 0;
+  setPath(a, p, () => restStep(a, 'warm'));
+}
+// 暑いときは日よけ・水辺（泳げる動物）・木陰へ
+function goCool(a) {
+  a.task = 'cool';
+  const sw = !!SP[a.sp].swim;
+  const [x, y] = tileOf(a);
+  let p = bfs(x, y, a.walk, (xx, yy, i) => (sw && ter[i] === 1) || (!isNight() && shadeNear(xx, yy)), 1e9, 30);
+  if (!p && !isNight()) p = bfs(x, y, a.walk, (xx, yy) => treeNear(xx, yy), 1e9, 15);
+  if (!p) { if (a.home && a.home.done) return goSleep(a); return wander(a); }
+  a.restT = 0;
+  setPath(a, p, () => restStep(a, 'cool'));
+}
+function restStep(a, kind) {
+  a.act = { n: kind, t: 3, done: () => {
+    a.restT += 3;
+    const v = kind === 'warm' ? a.cold : a.heat;
+    if (v > 8 && a.restT < 45 && a.hunger > 25) restStep(a, kind); else a.task = null;
+  } };
+}
+function goCamp(a, then) {
+  const p = findPath(a, nearCamp, 40000);
+  if (!p) { wander(a); return; }
+  setPath(a, p, then);
+}
+function deliver(a) {
+  a.task = 'deliver';
+  goCamp(a, () => {
+    if (a.carry) { G.stock[a.carry.k] += a.carry.n; fx(a.x, a.y - 30, '+' + a.carry.n + ' ' + ICON[a.carry.k], '#2e7d32'); a.carry = null; }
+    a.idle = .3; a.task = null;
+  });
+}
+const ICON = { wood: '🪵', stone: '🪨', berry: '🫐', fish: '🐟' };
+const bushGoal = (x, y, i) => obj[i] && obj[i].k === 'bush' && obj[i].berries > 0;
+function eatBushVia(a, p) {
+  const [sx, sy] = tileOf(a);
+  const ti = p.length ? p[p.length - 1] : sy * MW + sx;
+  setPath(a, p, () => {
+    a.act = { n: 'eat', t: 2.5, done: () => {
+      const o = obj[ti];
+      if (o && o.berries > 0) { o.berries--; a.hunger = Math.min(100, a.hunger + 40); objChanged(ti); fx(a.x, a.y - 30, 'もぐもぐ'); }
+      a.task = null;
+    } };
+  });
+}
+function fishEatVia(a, p) {
+  setPath(a, p, () => {
+    a.act = { n: 'fish', t: 7 / Math.max(.3, eff(a, 'fish')), done: () => {
+      a.hunger = Math.min(100, a.hunger + 45); fx(a.x, a.y - 30, '🐟 ぱくっ'); a.task = null;
+    } };
+  });
+}
+function goEat(a) {
+  a.task = 'eat';
+  const d = SP[a.sp].diet;
+  // キャンプから遠いときは、近くの木の実や魚ですませる
+  const [tx, ty] = tileOf(a);
+  if (Math.abs(tx - G.cx) + Math.abs(ty - G.cy) > 20) {
+    if (d !== 'carn') { const p = bfs(tx, ty, a.walk, bushGoal, 1e9, 14); if (p) return eatBushVia(a, p); }
+    if (d !== 'herb') { const p = bfs(tx, ty, a.walk, isShore, 1e9, 14); if (p) return fishEatVia(a, p); }
+  }
+  const food = dietFoods(a).find(k => G.stock[k] > 0);
+  if (food) {
+    goCamp(a, () => {
+      if (a.carry) { G.stock[a.carry.k] += a.carry.n; fx(a.x, a.y - 44, '+' + a.carry.n + ' ' + ICON[a.carry.k], '#2e7d32'); a.carry = null; }
+      a.act = { n: 'eat', t: 2, done: () => {
+        const f = dietFoods(a).find(k => G.stock[k] > 0);
+        if (f) { G.stock[f]--; a.hunger = Math.min(100, a.hunger + 55); fx(a.x, a.y - 30, 'もぐもぐ'); }
+        a.task = null;
+      } };
+    });
+    return;
+  }
+  if (d !== 'carn') { const p = findPath(a, bushGoal, 25000); if (p) return eatBushVia(a, p); }
+  if (d !== 'herb') { const p = findPath(a, isShore, 25000); if (p) return fishEatVia(a, p); }
+  wander(a);
+}
+function goSleep(a) {
+  a.task = 'sleep';
+  // 自分の家があれば、家に入って眠る
+  if (a.home && a.home.done && G.builds.get(a.home.idx) === a.home) {
+    const hi = a.home.idx, hx = hi % MW, hy = Math.floor(hi / MW), h = a.home;
+    const p = findPath(a, (x, y) => Math.abs(x - hx) + Math.abs(y - hy) === 1, 40000);
+    if (p) {
+      setPath(a, p, () => {
+        if (G.builds.get(hi) !== h) { a.sleeping = true; return; }
+        a.sleeping = true; a.inHouse = h; a.outX = a.x; a.outY = a.y;
+        a.x = (hx + .5) * T; a.y = (hy + .5) * T;
+      });
+      return;
+    }
+  }
+  const sx = G.cx + a.spot[0], sy = G.cy + a.spot[1];
+  const p = findPath(a, (x, y) => x === sx && y === sy, 40000) || findPath(a, nearCamp, 40000);
+  if (!p) { a.sleeping = true; return; }
+  setPath(a, p, () => { a.sleeping = true; });
+}
+function wander(a) {
+  const [x, y] = tileOf(a);
+  for (let k = 0; k < 10; k++) {
+    const tx = x + Math.round(rand(-3, 3)), ty = y + Math.round(rand(-3, 3));
+    if (!a.walk(tx, ty)) continue;
+    const p = bfs(x, y, a.walk, (xx, yy) => xx === tx && yy === ty, 300);
+    if (p) { setPath(a, p, () => { a.idle = rand(1, 2.5); }); a.task = 'wander'; return; }
+  }
+  a.idle = 1.5;
+}
+function pickJob(a) {
+  const n = alive().length;
+  const food = G.stock.berry + G.stock.fish;
+  const carn = alive().filter(x => SP[x.sp].diet === 'carn').length;
+  const need = {
+    chop: G.stock.wood < 40 ? 1.1 : .55,
+    gather: food < n * 6 ? 1.6 : .8,
+    fish: (food < n * 6 ? 1.6 : .8) + (G.stock.fish < carn * 5 ? .7 : 0),
+    mine: G.stock.stone < 20 ? .7 : .3,
+    explore: G.landExplored / Math.max(1, G.landTotal) < .3 ? 1.0 : .45,
+    build: hasBlueprint() ? 2.4 : 0,
+  };
+  let best = 'gather', bs = -1;
+  for (const j in need) { const s = eff(a, j) * need[j] * rand(.75, 1.25); if (s > bs) { bs = s; best = j; } }
+  return best;
+}
+const WORK_T = { chop: 8, gather: 5, mine: 9 };
+const RES_OF = { chop: ['tree', 'palm'], gather: ['bush'], mine: ['rock'] };
+function goWork(a) {
+  const job = a.job === 'auto' ? pickJob(a) : a.job;
+  a.task = job;
+  if (job === 'build') {
+    let bt = -1;
+    const p = findPath(a, (x, y) => {
+      for (let d = 0; d < 4; d++) { const j = (y + DY[d]) * MW + x + DX[d]; const b = G.builds.get(j); if (b && !b.done) { bt = j; return true; } }
+      return false;
+    }, 40000);
+    if (!p) { a.task = null; return wander(a); }
+    setPath(a, p, () => buildStep(a, bt));
+    return;
+  }
+  if (job === 'explore') {
+    const p = findPath(a, (x, y, i) => !explored[i], 60000);
+    if (!p) { if (a.job === 'explore' && !a.toldExplore) { addLog(`🧭 ${a.name}「歩ける場所はぜんぶ見たよ！」`); a.toldExplore = true; } return wander(a); }
+    setPath(a, p.slice(0, 40), () => { a.idle = .2; a.task = null; });
+    return;
+  }
+  if (job === 'fish') {
+    const p = findPath(a, isShore, 25000);
+    if (!p) return wander(a);
+    setPath(a, p, () => {
+      a.act = { n: 'fish', t: 7 / Math.max(.3, eff(a, 'fish')), done: () => {
+        const amt = Math.max(1, Math.round(eff(a, 'fish') * 1.4 * rand(.6, 1.4) * SEASONS[seasonIdx()].fish));
+        a.carry = { k: 'fish', n: amt }; deliver(a);
+      } };
+    });
+    return;
+  }
+  const ks = RES_OF[job];
+  const p = findPath(a, (x, y, i) => { const o = obj[i]; return o && ks.includes(o.k) && !o.res && (o.k !== 'bush' || o.berries > 0); }, 30000);
+  if (!p) return wander(a);
+  const [sx, sy] = tileOf(a);
+  const ti = p.length ? p[p.length - 1] : sy * MW + sx;
+  obj[ti].res = a.id; a.resIdx = ti;
+  setPath(a, p, () => {
+    a.act = { n: job, t: WORK_T[job] / Math.max(.2, eff(a, job)), done: () => {
+      release(a);
+      const o = obj[ti];
+      if (!o) { a.task = null; return; }
+      if (job === 'chop') {
+        a.carry = { k: 'wood', n: o.k === 'palm' ? 3 : 5 };
+        obj[ti] = null; objChanged(ti);
+      } else if (job === 'gather') {
+        const n = Math.min(o.berries, Math.max(1, Math.round(1 + eff(a, 'gather') * 1.2)));
+        if (n <= 0) { a.task = null; return; }
+        o.berries -= n; a.carry = { k: 'berry', n }; objChanged(ti);
+      } else if (job === 'mine') {
+        a.carry = { k: 'stone', n: eff(a, 'mine') > 1.3 ? 3 : 2 };
+        o.amt--; if (o.amt <= 0) obj[ti] = null; objChanged(ti);
+      }
+      deliver(a);
+    } };
+  });
+}
+
+// ---------- 建物を建てる・壊す ----------
+const hasBlueprint = () => { for (const b of G.builds.values()) if (!b.done) return true; return false; };
+function canPlace(i) {
+  const x = i % MW, y = Math.floor(i / MW);
+  if (x < 1 || y < 1 || x >= MW - 1 || y >= MH - 1) return false;
+  if (!explored[i] || ter[i] < 2 || obj[i] || G.builds.has(i)) return false;
+  if (Math.abs(x - G.cx) <= 3 && y >= G.cy - 3 && y <= G.cy + 2) return false;   // キャンプのまわりは空けておく
+  return true;
+}
+function placeBuild(type, i, quiet) {
+  if (!canPlace(i)) return false;
+  const info = BINFO[type];
+  for (const k in info.cost) if (G.stock[k] < info.cost[k]) {
+    if (!quiet) addLog(`${info.n}を建てるには${Object.entries(info.cost).map(([r, n]) => RES_N[r] + n).join('・')}が必要です（${RES_N[k]}が足りません）`, 'bad');
+    return 'short';
+  }
+  for (const k in info.cost) G.stock[k] -= info.cost[k];
+  G.builds.set(i, { type, idx: i, done: false, prog: 0, need: info.work, hp: info.hp, maxHp: info.hp, sleepers: [], no: 0 });
+  return true;
+}
+function removeAt(i) {
+  const b = G.builds.get(i); if (!b) return;
+  const info = BINFO[b.type];
+  if (!b.done) {
+    for (const k in info.cost) G.stock[k] += info.cost[k];
+    G.builds.delete(i);
+    addLog(`${info.n}の予定を取り消しました（材料は全部もどりました）`);
+    return;
+  }
+  for (const k in info.cost) G.stock[k] += Math.floor(info.cost[k] / 2);
+  destroyBuild(i, null);
+  addLog(`${info.n}を解体しました（材料が半分もどりました）`);
+}
+function destroyBuild(i, by) {
+  const b = G.builds.get(i); if (!b) return;
+  G.builds.delete(i); bld[i] = 0;
+  if (b.type === 'house') for (const a of G.animals) { if (a.inHouse === b) wake(a); if (a.home === b) a.home = null; }
+  if (by) {
+    addLog(`💥 ${by}が${b.type === 'house' ? '家' + b.no : BINFO[b.type].n}をこわした！`, 'bad');
+    fx((i % MW + .5) * T, (Math.floor(i / MW) + .2) * T, 'バキッ！', '#c0392b');
+  }
+  if (G.selected) fillHomeSel();
+}
+function completeBuild(b, a) {
+  b.done = true; bld[b.idx] = BINFO[b.type].code;
+  if (b.type === 'house') {
+    b.no = ++G.houseNo;
+    // ねらわれやすい小さな草食動物から優先して住む
+    const score = x => (alive().some(h => isPreyOf(h, x)) ? 2 : 0) + (SP[x.sp].size <= 2 ? 1 : 0);
+    const cands = alive().filter(x => !x.home).sort((p, q) => score(q) - score(p));
+    for (const x of cands) { if (b.sleepers.length >= 2) break; setHome(x, b); }
+    const names = b.sleepers.map(id => G.animals.find(x => x.id === id).name).join('と');
+    addLog(`🏠 ${a.name}が家${b.no}を建てた！` + (names ? `（${names}が住みます）` : ''), 'good');
+  } else if (b.type !== 'fence') addLog(`🔨 ${a.name}が${BINFO[b.type].n}を建てた`);
+  if (G.selected) fillHomeSel();
+}
+function setHome(a, h) {
+  if (a.home) a.home.sleepers = a.home.sleepers.filter(id => id !== a.id);
+  if (a.inHouse && a.inHouse !== h) wake(a);
+  a.home = h || null;
+  if (h) h.sleepers.push(a.id);
+}
+function wake(a) {
+  if (a.inHouse) { a.x = a.outX; a.y = a.outY; a.inHouse = null; }
+  a.sleeping = false;
+}
+function buildStep(a, bt) {
+  const b = G.builds.get(bt);
+  if (!b || b.done || isNight() || a.hunger < 35 || a.energy < 12) { a.task = null; return; }
+  a.flip = (bt % MW + .5) * T < a.x;
+  a.act = { n: 'build', t: 2.5, done: () => {
+    const b = G.builds.get(bt);
+    if (!b || b.done) { a.task = null; return; }
+    b.prog += 2.5 * Math.max(.2, eff(a, 'build'));
+    if (b.prog >= b.need) { completeBuild(b, a); a.task = null; }
+    else buildStep(a, bt);
+  } };
+}
+
+// ---------- ケガ・死 ----------
+function damage(a, amt, src) {
+  if (a.dead) return;
+  amt *= SP[a.sp].armor || 1;
+  amt = Math.round(amt);
+  a.hp -= amt; fx(a.x, a.y - 34, '-' + amt, '#c0392b');
+  wake(a);
+  if (a.hp <= 0) die(a, src);
+}
+function die(a, cause) {
+  wake(a); setHome(a, null);
+  a.dead = true; a.hp = 0; interrupt(a); a.carry = null;
+  if (a.chase) endChase(a, 'dead');
+  for (const o of G.animals) { if (o.guard === a) o.guard = null; if (o.fleeFrom === a) o.fleeFrom = null; }
+  G.graves.push({ x: a.x, y: a.y, name: a.name });
+  G.causes = (G.causes || []).concat(SP[a.sp].n + ':' + cause + '@' + G.day);
+  addLog(`💀 ${a.name}（${SP[a.sp].n}）が死んでしまった…（${cause}）`, 'bad');
+  removeAlert('glare', a); removeAlert('chase', a);
+  if (G.selected === a) refreshPanel(true);
+  buildTeam();
+  if (!alive().length) gameOver();
+}
+
+// ---------- 追いかけっこ（肉食動物が空腹のとき） ----------
+function startChase(h, p) {
+  interrupt(h); interrupt(p); wake(h); wake(p);
+  h.chase = { p, t: 14 }; p.fleeFrom = h; p.fleeT = 0;
+  addRel(h, p, -15);
+  removeAlert('glare', h);
+  addLog(`⚠ ${h.name}（${SP[h.sp].n}）が${p.name}（${SP[p.sp].n}）を追いかけはじめた！`, 'bad');
+  addAlert('chase', h, p, `⚠ ${h.name}が${p.name}を追いかけています！`);
+  let best = null, bv = 0;
+  for (const g of alive()) {
+    if (g === h || g === p || g.sleeping || g.chase || hasT(g, 'coward')) continue;
+    if (dist(g, h) > 12 * T || getRel(g, p) < 55) continue;
+    const v = eff(g, 'fight');
+    if (v >= eff(h, 'fight') * .6 && v > bv) { bv = v; best = g; }
+  }
+  if (best) { interrupt(best); best.guard = h; addLog(`🛡 ${best.name}が止めに走った！`); }
+}
+function endChase(h, why) {
+  const p = h.chase.p; h.chase = null;
+  if (p.fleeFrom === h) p.fleeFrom = null;
+  for (const g of G.animals) if (g.guard === h) g.guard = null;
+  removeAlert('chase', h);
+  if (why === 'giveup') addLog(`${h.name}はあきらめた…（まだおなかがすいている）`);
+  h.idle = 1.5; p.idle = 1;
+}
+function updateChase(h, dt) {
+  const c = h.chase, p = c.p;
+  c.t -= dt;
+  if (p.dead) { endChase(h, 'dead'); return; }
+  if (c.t <= 0) { endChase(h, 'giveup'); return; }
+  moveToward(h, p.x, p.y, spd(h) * 1.15 * dt, h.walk);
+  if (dist(h, p) < T * .55) {
+    addLog(`💥 ${h.name}が${p.name}にかみついた！`, 'bad');
+    h.hunger = Math.min(100, h.hunger + 30);
+    if (SP[p.sp].spiky) { addLog(`🦔 ${p.name}のトゲが${h.name}に刺さった！`); damage(h, 12, p.name + 'のトゲ'); }
+    addRel(h, p, -20);
+    endChase(h, 'bite');
+    damage(p, 8 + h.st.str * 3, h.name + 'にかまれた');
+  }
+}
+function updateFlee(p, dt) {
+  const h = p.fleeFrom;
+  if (!h || !h.chase || h.dead) { p.fleeFrom = null; return; }
+  p.fleeT += dt;
+  const dx = p.x - h.x, dy = p.y - h.y, l = Math.hypot(dx, dy) || 1;
+  const k = Math.max(.65, 1.25 - p.fleeT * .05);   // 逃げ続けると疲れておそくなる
+  moveToward(p, p.x + dx / l * T * 3, p.y + dy / l * T * 3, spd(p) * k * dt, p.walk);
+}
+function updateGuard(g, dt) {
+  const h = g.guard;
+  if (!h || !h.chase) { g.guard = null; return; }
+  moveToward(g, h.x, h.y, spd(g) * 1.2 * dt, g.walk);
+  if (dist(g, h) < T * .9) {
+    const p = h.chase.p;
+    addLog(`🛡 ${g.name}が${h.name}を止めた！ ${p.name}は助かった`, 'good');
+    addRel(g, h, -8); addRel(g, p, 12); addRel(h, p, -5);
+    endChase(h, 'stopped'); g.guard = null;
+  }
+}
+function feed(a) {
+  if (a.dead) return;
+  const f = dietFoods(a).find(k => G.stock[k] > 0);
+  if (!f) { addLog(`${a.name}にあげる食べ物がない！（${DIET_N[SP[a.sp].diet]}）`, 'bad'); return; }
+  G.stock[f]--; a.hunger = Math.min(100, a.hunger + 55);
+  fx(a.x, a.y - 30, 'もぐもぐ♪');
+  addLog(`🍽 ${a.name}に${f === 'fish' ? '魚' : '木の実'}をあげた`);
+  if (a.chase) endChase(a, 'fed');
+  removeAlert('glare', a);
+}
+
+// ---------- 夜の大ガニ ----------
+// カニが歩ける場所（建物は通れない）と、道を考えるとき（柵・門はかじって進むつもりで通れる扱い）
+const crabWalk = (x, y) => x >= 0 && y >= 0 && x < MW && y < MH && ter[y * MW + x] >= 1 && (bld[y * MW + x] === 0 || bld[y * MW + x] >= 4);
+const crabPlan = (x, y) => x >= 0 && y >= 0 && x < MW && y < MH && ter[y * MW + x] >= 1 && bld[y * MW + x] !== 3;
+function crabHitBuild(c, i, dt) {
+  c.cd -= dt;
+  if (c.cd > 0) return;
+  c.cd = 1.3;
+  const b = G.builds.get(i); if (!b) return;
+  b.hp -= c.dmg;
+  fx((i % MW + .5) * T, (Math.floor(i / MW) + .3) * T, 'ガリッ', '#8a5a3b');
+  if (b.hp <= 0) destroyBuild(i, '大ガニ');
+}
+function spawnRaid() {
+  // 仲間が少ないうちはカニも少なめ（2〜3匹なら1匹、4匹なら2匹…）
+  const n = Math.min(7, 1 + Math.floor(G.day / 3) + (Math.random() < .4 ? 1 : 0), Math.max(1, Math.floor(alive().length * .6)));
+  const cands = [];
+  bfs(G.cx, G.cy, landWalk, (x, y, i, d) => { if (d >= 16 && ter[i] === 2) cands.push(i); return false; }, 1e9, 36);
+  if (!cands.length) return;
+  const i0 = pick(cands);
+  for (let k = 0; k < n; k++) {
+    const hp = 20 + G.day * 3;
+    G.crabs.push({ x: (i0 % MW + .5) * T + rand(-20, 20), y: (Math.floor(i0 / MW) + .5) * T + rand(-20, 20), hp, maxHp: hp, dmg: 4 + G.day * .6, sp: 1.4 * T, cd: 0, path: null, repath: 0, phase: Math.random() * 6, flip: false });
+  }
+  addLog(`🦀 大ガニが${n}匹、浜に上陸した！`, 'bad');
+  addAlert('raid', null, null, `🦀 大ガニが${n}匹上陸しています！ 戦える動物が迎えうちます`);
+  const ear = alive().find(a => SP[a.sp].alarm);
+  if (ear) { G.alarm = true; addLog(`👂 ${ear.name}が物音に気づいて、みんなを起こした！`); }
+}
+function crabGone(c) {
+  G.crabs = G.crabs.filter(x => x !== c);
+  if (!G.crabs.length) { G.alarm = false; removeAlert('raid'); addLog('🌅 朝になって、大ガニは海へ帰っていった', 'good'); }
+}
+function updateCrab(c, dt) {
+  // 朝になったら海へ帰る
+  const h = hour();
+  if (h >= 6 && h < 20) {
+    c.tgt = null;
+    const [x, y] = tileOf(c);
+    if (ter[y * MW + x] <= 1) { crabGone(c); return; }
+    if (!c.leaving) { c.leaving = true; c.path = bfs(x, y, crabWalk, (xx, yy, i) => ter[i] <= 1, 1e9, 60); if (!c.path) { crabGone(c); return; } }
+    if (c.path && c.path.length) followPath(c, c.sp * dt); else crabGone(c);
+    return;
+  }
+  let tgt = null, bd = 5 * T;
+  if (c.ignoreT > 0) c.ignoreT -= dt;
+  for (const a of G.animals) {
+    if (a.dead || a.inHouse || (c.ignoreT > 0 && a === c.ignoreA)) continue;
+    const d = dist(a, c); if (d < bd) { bd = d; tgt = a; }
+  }
+  // 同じ相手を8秒追いかけても届かなければ、あきらめてしばらくねらわない
+  if (tgt && tgt === c.lastTgt && bd > T * .8) c.chaseT = (c.chaseT || 0) + dt; else c.chaseT = 0;
+  c.lastTgt = tgt;
+  if (c.chaseT > 8) { c.ignoreA = tgt; c.ignoreT = 15; c.chaseT = 0; tgt = null; }
+  c.moving = false; c.tgt = tgt;
+  if (tgt) {
+    if (bd > T * .8) {
+      // 目の前が柵・門なら、かじって壊そうとする
+      const ux = (tgt.x - c.x) / bd, uy = (tgt.y - c.y) / bd;
+      const ni = Math.floor((c.y + uy * T * .6) / T) * MW + Math.floor((c.x + ux * T * .6) / T);
+      if (bld[ni] === 1 || bld[ni] === 2) { crabHitBuild(c, ni, dt); return; }
+      moveToward(c, tgt.x, tgt.y, c.sp * dt, crabWalk);
+    } else { c.cd -= dt; if (c.cd <= 0) { c.cd = 1.3; damage(tgt, c.dmg, '大ガニにおそわれた'); } }
+    return;
+  }
+  if (c.path && c.path.length) {
+    const ni = c.path[0];
+    if (bld[ni] === 1 || bld[ni] === 2) { crabHitBuild(c, ni, dt); return; }
+    if (bld[ni] === 3) { c.path = null; return; }
+    followPath(c, c.sp * dt); return;
+  }
+  c.repath -= dt;
+  if (c.repath <= 0) {
+    c.repath = 3;
+    const [x, y] = tileOf(c);
+    // すき間があればそこを通り、完全に囲まれていたら柵をかじって進む
+    c.path = bfs(x, y, crabWalk, nearCamp, 60000) || bfs(x, y, crabPlan, nearCamp, 60000);
+  }
+}
+function killCrab(c, by) {
+  G.crabs = G.crabs.filter(x => x !== c);
+  G.stock.fish += 2;
+  fx(c.x, c.y - 20, '+2 🐟', '#2e7d32');
+  addLog(`⚔ ${by.name}が大ガニをたおした！（カニ肉 +2）`, 'good');
+  if (!G.crabs.length) { G.alarm = false; removeAlert('raid'); addLog('🎉 大ガニを追いはらった！', 'good'); }
+}
+function combatCheck(a, dt) {
+  let c = null, bd = 1e9;
+  for (const k of G.crabs) { const d = dist(a, k); if (d < bd) { bd = d; c = k; } }
+  if (!c) return false;
+  const dCamp = dist(campPos(), c);
+  if (!G.alarm && bd > 8 * T) return false;
+  const fighter = isFighter(a) && (a.hp > a.maxHp * .3 || hasT(a, 'brave'));
+  if (a.inHouse && !fighter) return false;   // 家の中ならカニにおそわれない
+  if (fighter) {
+    const help = G.crabs.find(k => k.tgt && k.tgt !== a && dist(a, k) < 30 * T);
+    if (dCamp < 22 * T || bd < 8 * T) { interrupt(a); wake(a); a.fight = c; return true; }
+    if (help) { interrupt(a); wake(a); a.fight = help; addLog(`🛡 ${a.name}が${help.tgt.name}を助けに向かった！`); return true; }
+  }
+  if (bd < 6 * T) {
+    if (a.path || a.act) interrupt(a);
+    wake(a);
+    const cp = campPos();
+    let dx = a.x - c.x, dy = a.y - c.y, l = Math.hypot(dx, dy) || 1;
+    const kx = cp.x - a.x, ky = cp.y - a.y, kl = Math.hypot(kx, ky) || 1;
+    // キャンプがカニと反対側なら、仲間のいるキャンプへ逃げる
+    if (kl > 2 * T && (kx / kl) * (dx / l) + (ky / kl) * (dy / l) > -.2) { dx = kx; dy = ky; l = kl; }
+    moveToward(a, a.x + dx / l * T * 2, a.y + dy / l * T * 2, spd(a) * dt, a.walk);
+    a.scared = 1;
+    return true;
+  }
+  return false;
+}
+function updateFight(a, dt) {
+  let c = a.fight;
+  if (!G.crabs.includes(c)) {
+    a.fight = null;
+    let bd = 12 * T; for (const k of G.crabs) { const d = dist(a, k); if (d < bd) { bd = d; a.fight = k; } }
+    if (!a.fight) { a.idle = .5; return; }
+    c = a.fight;
+  }
+  if (a.hp < a.maxHp * .25 && !hasT(a, 'brave')) { a.fight = null; addLog(`${a.name}はケガがひどくて下がった`); goSleep(a); return; }
+  if (dist(a, c) > T * .85) moveToward(a, c.x, c.y, spd(a) * 1.1 * dt, a.walk);
+  else {
+    a.flip = c.x < a.x;
+    a.cd = (a.cd || 0) - dt;
+    if (a.cd <= 0) {
+      a.cd = 1;
+      const dmg = Math.round(3 + eff(a, 'fight') * 6);
+      c.hp -= dmg; fx(c.x, c.y - 24, '-' + dmg, '#c0392b');
+      if (c.hp <= 0) killCrab(c, a);
+    }
+  }
+}
+
+// ---------- 1匹ずつの毎フレームの動き ----------
+function updateAnimal(a, dt) {
+  if (a.dead) return;
+  a.moving = false; a.scared = 0;
+  const night = isNight();
+  // 寒さ・暑さ
+  a.tv = (a.tv || 0) - dt;
+  if (a.tv <= 0) { a.tv = .5; a.felt = feltTemp(a); }
+  const [cmin, cmax] = SP[a.sp].comfort, ft = a.felt ?? G.temp;
+  a.cold = ft < cmin ? Math.min(100, (a.cold || 0) + (cmin - ft) * .12 * dt) : Math.max(0, (a.cold || 0) - 2.5 * dt);
+  a.heat = ft > cmax ? Math.min(100, (a.heat || 0) + (ft - cmax) * .12 * dt) : Math.max(0, (a.heat || 0) - 2.5 * dt);
+  if (a.cold > 60 && !a.toldCold) { a.toldCold = true; addLog(`🥶 ${a.name}が寒さでふるえている！（体感 ${Math.round(ft)}℃）`, 'bad'); } else if (a.cold < 30) a.toldCold = false;
+  if (a.heat > 60 && !a.toldHeat) { a.toldHeat = true; addLog(`🥵 ${a.name}が暑さでぐったりしている！（体感 ${Math.round(ft)}℃）`, 'bad'); } else if (a.heat < 30) a.toldHeat = false;
+  const stressed = a.cold > 70 || a.heat > 70;
+  if (stressed) { a.hp -= a.maxHp / DAY * dt; if (a.hp <= 0) { die(a, a.cold > 70 ? '寒さ' : '暑さ'); return; } }
+  const hr = 100 / (DAY * .75) * (.5 + a.st.app * .1) * tr(a, 'hunger') * (a.sleeping ? .5 : 1) * (a.cold > 30 ? 1.3 : 1);
+  a.hunger = Math.max(0, a.hunger - hr * dt);
+  const sleepy = SP[a.sp].hibernate && seasonIdx() === 3 ? 3 : 1;   // クマ・ハリネズミは冬に眠くなる
+  if (a.sleeping) {
+    const inH = a.inHouse ? 1.3 : 1;   // 家の中だとよく眠れる
+    a.energy = Math.min(100, a.energy + 100 / (DAY * .3) * (SP[a.sp].wool ? 1.4 : 1) * inH / (sleepy > 1 ? 2 : 1) * dt);
+    if (!stressed) a.hp = Math.min(a.maxHp, a.hp + a.maxHp / (DAY * .5) * inH * inH * dt);
+  } else {
+    a.energy = Math.max(0, a.energy - 100 / (DAY * 1.1) * tr(a, 'energy') * sleepy * (a.heat > 30 ? 1.5 : 1) * dt);
+    if (!stressed) a.hp = Math.min(a.maxHp, a.hp + a.maxHp / (DAY * 3) * dt);
+  }
+  if (a.hunger <= 0) {
+    a.hp -= a.maxHp / (DAY * .6) * dt;
+    if (!a.toldStarve) { G.starves = (G.starves || 0) + 1; G.sinfo = (G.sinfo || []).concat(SP[a.sp].n + '[' + G.day + 'd' + Math.round(hour()) + 'h t:' + a.task + ' act:' + (a.act ? a.act.n : '-') + ' p:' + (a.path ? a.path.length : '-') + ' sl:' + a.sleeping + ' fl:' + !!a.fleeFrom + ' fi:' + !!a.fight + ' sc:' + a.scared + ' urg:' + a.urgent + ' idle:' + a.idle.toFixed(1) + ' c' + Math.round(a.cold) + ' h' + Math.round(a.heat) + ' d' + Math.round(dist(a, campPos()) / T) + ' fish' + G.stock.fish + ' berry' + G.stock.berry + ' crabs' + G.crabs.length + ']'); addLog(`⚠ ${a.name}がおなかぺこぺこで弱っている！`, 'bad'); a.toldStarve = true; }
+    if (a.hp <= 0) { die(a, '空腹'); return; }
+  } else if (a.hunger > 30) a.toldStarve = false;
+  a.rv = (a.rv || 0) - dt;
+  if (a.rv <= 0) { a.rv = .3; const [tx, ty] = tileOf(a); reveal(tx, ty, a.task === 'explore' ? 8 : 6); }
+
+  if (a.chase) { updateChase(a, dt); return; }
+  if (a.fleeFrom) { updateFlee(a, dt); return; }
+  if (a.guard) { updateGuard(a, dt); return; }
+  if (a.fight) { updateFight(a, dt); return; }
+  if (G.crabs.length && combatCheck(a, dt)) return;
+  if (a.sleeping) {
+    if (a.hunger < 15) wake(a);
+    else if ((a.cold > 75 || a.heat > 75) && !a.inHouse) wake(a);   // 寒すぎる・暑すぎて眠れない
+    else if (!night && a.energy > (sleepy > 1 ? 90 : 60) && a.hp > a.maxHp * .5) wake(a);
+    else return;
+  }
+  if ((a.hunger < 22 || a.cold > 75 || a.heat > 75) && !['eat', 'warm', 'cool'].includes(a.task) && !a.urgent) { interrupt(a); a.urgent = true; }
+  if (a.path) { followPath(a, spd(a) * (ter[tileOf(a)[1] * MW + tileOf(a)[0]] === 1 ? .7 : 1) * dt); return; }
+  if (a.act) { a.act.t -= dt * (WORK_ACTS.has(a.act.n) ? workMul(a) : 1); if (a.act.t <= 0) { const f = a.act.done; a.act = null; if (f) f(); } return; }
+  if (a.idle > 0) { a.idle -= dt; return; }
+  a.urgent = false;
+  think(a);
+}
+
+// ---------- 1秒ごとのチェック ----------
+function slowTick() {
+  const list = alive();
+  // なかよし度：近くにいると少しずつ上がる
+  for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) {
+    const a = list[i], b = list[j];
+    if (a.chase || b.chase) continue;
+    const hungryHunter = (isPreyOf(a, b) && a.hunger < 35) || (isPreyOf(b, a) && b.hunger < 35);
+    if (!hungryHunter && dist(a, b) < 2.5 * T) addRel(a, b, .25);
+  }
+  // 肉食動物の空腹チェック
+  for (const h of list) {
+    if (!SP[h.sp].hunts || h.sleeping || h.chase || G.crabs.length) { if (h.glare && (h.sleeping || h.chase)) h.glare = null; continue; }
+    h.glare = null;
+    if (h.hunger >= 40) { removeAlert('glare', h); continue; }
+    let target = null, bd = 1e9;
+    for (const p of list) {
+      if (!isPreyOf(h, p)) continue;
+      const d = dist(h, p);
+      if (d < 7 * T && getRel(h, p) < 45 && d < bd) { bd = d; target = p; }
+    }
+    if (!target) continue;
+    if (bd < 5 * T && h.hunger < 35) {
+      h.glare = target; addRel(h, target, -.6);
+      addAlert('glare', h, target, `👀 ${h.name}が${target.name}をじっと見ている…おなかがすいているみたい`, 'warn');
+    }
+    if (h.hunger < 20 && getRel(h, target) < 30 && Math.random() < .12) startChase(h, target);
+  }
+  // 木の実がまた実る
+  for (const i of bushes) { const o = obj[i]; if (o && o.k === 'bush' && o.berries < 4 && Math.random() < 4 / (DAY * .7) * SEASONS[seasonIdx()].berry) { o.berries++; objChanged(i); } }
+}
+
+function update(dt) {
+  const prevH = hour();
+  G.time += dt / DAY;
+  if (G.time >= 1) { G.time -= 1; G.day++; }
+  const h = hour();
+  const s = seasonIdx();
+  if (s !== G.season) onSeasonChange(s);
+  if (G.morningDay !== G.day && h >= 6 && h < 12) {
+    G.morningDay = G.day;
+    G.weather = rollWeather();
+    G.temp = airTemp();
+    addLog(`${WEATHER[G.weather].icon} ${SEASONS[s].n}の${seasonDay()}日目の朝です。きょうは${G.weather}（今 ${Math.round(G.temp)}℃）`);
+    if (s === 2 && seasonDay() === SEASON_LEN) addLog('🍂 あしたから冬です！ 木の実と魚をためて、たき火や家を用意しておこう', 'bad');
+    if (s === 0 && seasonDay() === SEASON_LEN) addLog('☀ あしたから夏です！ 暑さに弱い動物のために、日よけを用意しておこう', 'bad');
+    // 新しい動物が浜辺に流れつく（2日目から2日おき）
+    if (G.day >= (G.nextArrival || 2)) { G.nextArrival = G.day + 2; spawnVisitor(); }
+    saveGame(false);   // 毎朝自動セーブ
+  }
+  updateVisitor(dt);
+  G.temp = airTemp();
+  if (G.raidDay !== G.day && G.day >= 2 && h >= 21) { G.raidDay = G.day; if (Math.random() < Math.min(.9, .55 + G.day * .04) * SEASONS[s].raid) spawnRaid(); }
+  if (prevH < 20 && h >= 20) addLog('🌙 夜になりました。みんな焚き火のそばで眠ります');
+  G.tick += dt; if (G.tick >= 1) { G.tick -= 1; slowTick(); }
+  for (const a of G.animals) updateAnimal(a, dt);
+  for (const c of G.crabs.slice()) updateCrab(c, dt);
+  for (const f of G.fx) { f.life -= dt; f.y -= 14 * dt; }
+  G.fx = G.fx.filter(f => f.life > 0);
+}
+function gameOver() {
+  G.over = true;
+  document.getElementById('overTitle').textContent = '全滅してしまいました…';
+  document.getElementById('overText').textContent = `${G.day}日目、島に動物がいなくなってしまいました。食べ物・なかよし度・夜のカニ対策を見直して、もう一度チャレンジしてみてください。`;
+  document.getElementById('over').style.display = 'flex';
+}
+
+// =====================================================
+// 描画：島のブロック（あらかじめ絵にしておく）
+// =====================================================
+const chunkCache = new Map();
+const NCX = Math.ceil(MW / CH), NCY = Math.ceil(MH / CH);
+const LODS = [1, .6, .36];
+let bushes = [];
+function objChanged(i) {
+  const x = i % MW, y = Math.floor(i / MW);
+  const keys = new Set();
+  for (const [dx, dy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) keys.add(Math.floor((x + dx) / CH) + ',' + Math.floor((y + dy) / CH));
+  for (const k of keys) for (const l of LODS) chunkCache.delete(k + ',' + l);
+  miniPixel(i);
+}
+function treeRound(g, x, y, s, v) {
+  shadow(g, x, y + 10 * s, 13 * s, 4 * s);
+  g.lineWidth = 2; g.strokeStyle = OL;
+  rr(g, x - 2.5 * s, y - 4 * s, 5 * s, 14 * s, 2); g.fillStyle = '#b9824f'; g.fill(); g.stroke();
+  const P = PAL[G.season];
+  const c1 = v < .5 ? P.tree1 : P.tree1b, c2 = v < .5 ? P.tree2 : P.tree2b;
+  [[-6, -10, 8], [6, -10, 8], [0, -17, 9]].forEach(([dx, dy, r], k) => {
+    g.beginPath(); g.arc(x + dx * s, y + dy * s, r * s, 0, Math.PI * 2);
+    g.fillStyle = k === 2 ? c2 : c1; g.fill(); g.stroke();
+    if (P.snow) E(g, x + dx * s, y + (dy - r * .45) * s, r * .72 * s, r * .38 * s, '#ffffff', 0, false);   // 雪
+  });
+  if (G.season === 0 && v > .7) { dot(g, x - 5 * s, y - 13 * s, 1.8 * s, '#ffb3c6'); dot(g, x + 4 * s, y - 19 * s, 1.8 * s, '#ffb3c6'); dot(g, x + 6 * s, y - 9 * s, 1.8 * s, '#ffb3c6'); }   // 春の花
+  dot(g, x - 2 * s, y - 20 * s, 2.5 * s, 'rgba(255,255,255,.35)');
+}
+function palm(g, x, y, s) {
+  shadow(g, x + 2, y + 12 * s, 13 * s, 4 * s);
+  g.lineCap = 'round';
+  g.beginPath(); g.moveTo(x, y + 11 * s); g.quadraticCurveTo(x + 6 * s, y, x + 2 * s, y - 12 * s);
+  g.strokeStyle = OL; g.lineWidth = 8 * s; g.stroke();
+  g.strokeStyle = '#c98f5a'; g.lineWidth = 4.5 * s; g.stroke();
+  const tx = x + 2 * s, ty = y - 12 * s;
+  for (let k = 0; k < 5; k++) {
+    const a = -Math.PI / 2 + (k - 2) * .75;
+    g.save(); g.translate(tx, ty); g.rotate(a);
+    g.beginPath(); g.ellipse(11 * s, 0, 12 * s, 5.5 * s, 0, 0, Math.PI * 2);
+    g.fillStyle = k % 2 ? '#7fcf6e' : '#69bd5c'; g.fill();
+    g.strokeStyle = OL; g.lineWidth = 2; g.stroke();
+    g.restore();
+  }
+}
+function bushO(g, x, y, berries, i) {
+  shadow(g, x, y + 7, 12, 3.5);
+  g.lineWidth = 2;
+  const P = PAL[G.season];
+  E(g, x - 5, y, 6.5, 6, P.bush1); E(g, x + 5, y, 6.5, 6, P.bush1); E(g, x, y - 5, 7.5, 6.5, P.bush2);
+  if (P.snow) E(g, x, y - 9, 5.5, 2.4, '#ffffff', 0, false);
+  for (let k = 0; k < berries; k++) {
+    const bx = x + (hash(i, k) - .5) * 14, by = y - 4 + (hash(k, i) - .5) * 9;
+    dot(g, bx, by, 2.4, '#e0405a'); dot(g, bx - .7, by - .7, .8, 'rgba(255,255,255,.7)');
+  }
+}
+function rockO(g, x, y, s, i) {
+  shadow(g, x, y + 8 * s, 13 * s, 3.5 * s);
+  g.lineWidth = 2;
+  blob(g, x, y + 2 * s, 12 * s, 8.5 * s, i % 7, .12);
+  g.fillStyle = '#cfc8bf'; g.fill(); g.strokeStyle = OL; g.stroke();
+  g.beginPath(); g.ellipse(x - 4 * s, y - 1 * s, 3.5 * s, 2 * s, -.4, 0, Math.PI * 2);
+  g.fillStyle = 'rgba(255,255,255,.6)'; g.fill();
+}
+function drawObj(g, o, x, y, i) {
+  const px = x + (hash(i, 11) - .5) * 8, py = y + (hash(i, 12) - .5) * 6, s = .9 + hash(i, 13) * .25;
+  if (o.k === 'tree') treeRound(g, px, py, s, hash(i, 14));
+  else if (o.k === 'palm') palm(g, px, py, s * .95);
+  else if (o.k === 'bush') bushO(g, px, py, o.berries, i);
+  else if (o.k === 'rock') rockO(g, px, py, s, i);
+}
+function renderChunk(cx, cy, lod) {
+  const S = CH * T;
+  const cv = document.createElement('canvas');
+  cv.width = Math.ceil(S * lod); cv.height = Math.ceil(S * lod);
+  const g = cv.getContext('2d');
+  g.scale(lod, lod); g.translate(-cx * S, -cy * S);
+  const P = PAL[G.season];
+  g.fillStyle = P.sea; g.fillRect(cx * S, cy * S, S, S);
+  const x0 = Math.max(0, cx * CH - 2), x1 = Math.min(MW - 1, cx * CH + CH + 1);
+  const y0 = Math.max(0, cy * CH - 2), y1 = Math.min(MH - 1, cy * CH + CH + 1);
+  const pass = (test, r, color) => {
+    g.beginPath();
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+      if (!test(ter[y * MW + x])) continue;
+      const px = (x + .5) * T, py = (y + .5) * T;
+      g.moveTo(px + r, py); g.arc(px, py, r, 0, Math.PI * 2);
+    }
+    g.fillStyle = color; g.fill();
+  };
+  pass(t => t >= 1, T * .8, P.shallow);
+  pass(t => t >= 2, T * .74 + 2.5, OL);
+  pass(t => t >= 2, T * .74, P.sand);
+  pass(t => t >= 3, T * .7 + 2.2, P.grassL);
+  pass(t => t >= 3, T * .7, P.grass);
+  pass(t => t === 4, T * .66 + 1.8, '#c8bda6');
+  pass(t => t === 4, T * .66, P.rock);
+  g.lineWidth = 1.6; g.lineCap = 'round';
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+    const t = ter[y * MW + x], hv = hash(x, y), px = (x + .5) * T + (hash(y, x) - .5) * 16, py = (y + .5) * T + (hv - .5) * 16;
+    if (t === 3 && hv < .2) { g.strokeStyle = P.grassL; g.beginPath(); g.moveTo(px - 3, py - 3); g.lineTo(px, py); g.lineTo(px + 3, py - 4); g.stroke(); }
+    else if (t === 2 && hv < .25) dot(g, px, py, 1.3, P.sandDot);
+    else if (t === 3 && P.flower && hv > 1 - P.flowerRate) { dot(g, px, py, 2.4, P.flower); dot(g, px, py, 1, '#f0a04b'); }
+    else if (t === 3 && G.season === 2 && hv > .9) { E(g, px, py, 3, 1.6, hv > .95 ? '#d9643a' : '#e8a04b', hv * 6, false); }   // 落ち葉
+    else if (G.season === 3 && t >= 3 && hv > .93) { E(g, px, py, 5, 2.2, '#ffffff', 0, false); }   // 雪だまり
+  }
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+    const i = y * MW + x, o = obj[i];
+    if (o) drawObj(g, o, (x + .5) * T, (y + .5) * T, i);
+  }
+  return cv;
+}
+
+// ---------- 小さな地図 ----------
+const miniCv = document.getElementById('mini'), mctx = miniCv.getContext('2d');
+const miniBase = document.createElement('canvas'); miniBase.width = MW; miniBase.height = MH;
+const mbctx = miniBase.getContext('2d');
+// 季節ごとの色
+const PAL = [
+  { sea: '#a6dcf0', shallow: '#cdf0f7', sand: '#fbe7b5', sandDot: '#ead29a', grass: '#bfe39b', grassL: '#93c46d', rock: '#e2dac8',
+    tree1: '#69bd5c', tree1b: '#5aad55', tree2: '#7fcf6e', tree2b: '#6cc26a', bush1: '#6cbf5c', bush2: '#7fcf6e', flower: '#ffb3c6', flowerRate: .04, mini: '#7fbf6a' },
+  { sea: '#8fd3ef', shallow: '#c2eefa', sand: '#fbe2a8', sandDot: '#e8cc8a', grass: '#a9d982', grassL: '#7fb85a', rock: '#e2dac8',
+    tree1: '#4fae4a', tree1b: '#43a047', tree2: '#62c25a', tree2b: '#57b84f', bush1: '#57b04c', bush2: '#6cc25e', flower: '#fff176', flowerRate: .025, mini: '#5fae4f' },
+  { sea: '#a2d4e8', shallow: '#cbe9f2', sand: '#f4e0b0', sandDot: '#e3c98f', grass: '#dcd894', grassL: '#bfb86a', rock: '#e2d8c4',
+    tree1: '#e8a04b', tree1b: '#d9643a', tree2: '#f2c062', tree2b: '#e88a4a', bush1: '#c9a64e', bush2: '#d9b85e', flower: null, flowerRate: 0, mini: '#e0a050' },
+  { sea: '#9cc6da', shallow: '#c4e1ec', sand: '#eee6d2', sandDot: '#ddd2b8', grass: '#eef4f7', grassL: '#c6d6df', rock: '#e9ecef',
+    tree1: '#4e8f6c', tree1b: '#447f60', tree2: '#5e9f7a', tree2b: '#548f6e', bush1: '#8aa58e', bush2: '#9bb59c', flower: null, flowerRate: 0, snow: 1, mini: '#5e8f72' },
+];
+const TCOL = ['#a6dcf0', '#cdf0f7', '#fbe7b5', '#bfe39b', '#e2dac8'];
+function miniColor(i) {
+  const o = obj[i], P = PAL[G.season];
+  if (o) return o.k === 'rock' ? '#b8b0a4' : o.k === 'bush' ? P.bush2 : P.mini;
+  return [P.sea, P.shallow, P.sand, P.grass, P.rock][ter[i]];
+}
+function miniPixel(i) { mbctx.fillStyle = miniColor(i); mbctx.fillRect(i % MW, Math.floor(i / MW), 1, 1); }
+function buildMini() {
+  const img = mbctx.createImageData(MW, MH);
+  for (let i = 0; i < MW * MH; i++) {
+    const c = parseInt(miniColor(i).slice(1), 16);
+    img.data[i * 4] = c >> 16 & 255; img.data[i * 4 + 1] = c >> 8 & 255; img.data[i * 4 + 2] = c & 255; img.data[i * 4 + 3] = 255;
+  }
+  mbctx.putImageData(img, 0, 0);
+}
+function drawMini() {
+  mctx.setTransform(1, 0, 0, 1, 0, 0);
+  mctx.imageSmoothingEnabled = false;
+  mctx.drawImage(miniBase, 0, 0, miniCv.width, miniCv.height);
+  mctx.drawImage(fogCv, 0, 0, miniCv.width, miniCv.height);
+  const sx = miniCv.width / (MW * T), sy = miniCv.height / (MH * T);
+  for (const c of G.crabs) dot(mctx, c.x * sx, c.y * sy, 2.2, '#e53935');
+  if (G.visitor) { dot(mctx, G.visitor.x * sx, G.visitor.y * sy, 3.4, OL); dot(mctx, G.visitor.x * sx, G.visitor.y * sy, 2.4, '#66bb6a'); }
+  dot(mctx, (G.cx + .5) * T * sx, (G.cy + .5) * T * sy, 3, '#ff9b42');
+  for (const a of alive()) { dot(mctx, a.x * sx, a.y * sy, 2.6, OL); dot(mctx, a.x * sx, a.y * sy, 1.6, a === G.selected ? '#ffd36b' : '#fff'); }
+  mctx.strokeStyle = OL; mctx.lineWidth = 1.5;
+  mctx.strokeRect((cam.x - VW / 2 / cam.z) * sx, (cam.y - VH / 2 / cam.z) * sy, VW / cam.z * sx, VH / cam.z * sy);
+}
+
+// =====================================================
+// 描画：毎フレーム
+// =====================================================
+const cv = document.getElementById('game'), ctx = cv.getContext('2d');
+let VW = 0, VH = 0, DPR = 1;
+function resize() {
+  DPR = Math.min(2, window.devicePixelRatio || 1);
+  VW = innerWidth; VH = innerHeight;
+  cv.width = VW * DPR; cv.height = VH * DPR;
+}
+addEventListener('resize', resize); resize();
+const cam = { x: 0, y: 0, z: 1, follow: null };
+const w2s = (x, y) => [(x - cam.x) * cam.z + VW / 2, (y - cam.y) * cam.z + VH / 2];
+const s2w = (sx, sy) => [(sx - VW / 2) / cam.z + cam.x, (sy - VH / 2) / cam.z + cam.y];
+function clampCam() {
+  cam.z = clamp(cam.z, .35, 2.2);
+  cam.x = clamp(cam.x, 0, MW * T); cam.y = clamp(cam.y, 0, MH * T);
+}
+
+function hutC(g, x, y) {
+  shadow(g, x, y + 22, 32, 7);
+  g.lineJoin = 'round'; g.lineWidth = 2.4; g.strokeStyle = OL;
+  rr(g, x - 22, y - 6, 44, 28, 5); g.fillStyle = '#d9a46a'; g.fill(); g.stroke();
+  rr(g, x - 7, y + 4, 14, 18, 5); g.fillStyle = '#8a5a3b'; g.fill(); g.stroke();
+  g.beginPath(); g.moveTo(x - 31, y - 3); g.lineTo(x, y - 31); g.lineTo(x + 31, y - 3); g.closePath();
+  g.fillStyle = '#f2c862'; g.fill(); g.stroke();
+  g.strokeStyle = '#c99a3a'; g.lineWidth = 1.5;
+  [[-14, -11], [0, -18], [12, -10]].forEach(([dx, dy]) => { g.beginPath(); g.moveTo(x + dx, y + dy); g.lineTo(x + dx + 3, y + dy + 7); g.stroke(); });
+}
+function fireC(g, x, y, t) {
+  g.lineCap = 'round';
+  [-1, 1].forEach(a => {
+    g.beginPath(); g.moveTo(x - 11 * a, y + 9); g.lineTo(x + 11 * a, y + 3);
+    g.strokeStyle = OL; g.lineWidth = 7; g.stroke();
+    g.strokeStyle = '#a8703f'; g.lineWidth = 4; g.stroke();
+  });
+  const s = 1 + Math.sin(t * 10) * .08 + Math.sin(t * 17) * .05;
+  flame(g, x, y + 5, 10 * s, 20 * s, '#ff9b42', true);
+  flame(g, x, y + 4, 5.5 * s, 11 * s, '#ffe36b', false);
+}
+function crateC(g, x, y) {
+  shadow(g, x, y + 12, 18, 4);
+  g.lineWidth = 2; g.strokeStyle = OL;
+  rr(g, x - 15, y - 10, 30, 22, 3); g.fillStyle = '#c99a6b'; g.fill(); g.stroke();
+  g.beginPath(); g.moveTo(x - 15, y + 1); g.lineTo(x + 15, y + 1); g.moveTo(x - 15, y - 10); g.lineTo(x + 15, y + 12); g.stroke();
+  const s = G.stock;
+  if (s.wood > 0) { rr(g, x - 13, y - 18, 12, 6, 3); g.fillStyle = '#b9824f'; g.fill(); g.stroke(); }
+  if (s.berry > 0) { dot(g, x + 4, y - 13, 3, '#e0405a'); dot(g, x + 8, y - 15, 3, '#7b5ea7'); }
+  if (s.fish > 0) { E(g, x + 9, y - 11, 5, 2.5, '#8fb8d8'); }
+}
+function graveC(g, x, y) {
+  shadow(g, x, y + 2, 9, 3);
+  g.lineWidth = 2; g.strokeStyle = OL;
+  rr(g, x - 7, y - 16, 14, 17, 6); g.fillStyle = '#cfc8bf'; g.fill(); g.stroke();
+  g.beginPath(); g.moveTo(x, y - 12); g.lineTo(x, y - 4); g.moveTo(x - 3, y - 9); g.lineTo(x + 3, y - 9); g.stroke();
+  dot(g, x - 8, y, 2, '#ff9fb2'); dot(g, x + 8, y, 2, '#fff6a8');
+}
+// 柵・門・家（i = マスの番号）
+function structureC(g, type, i, no) {
+  const tx = i % MW, ty = Math.floor(i / MW), x = (tx + .5) * T, y = (ty + .5) * T;
+  g.lineCap = 'round'; g.lineJoin = 'round';
+  if (type === 'fence' || type === 'gate') {
+    const isF = j => { const b = G.builds.get(j); return b && (b.type === 'fence' || b.type === 'gate'); };
+    const rail = (x2, y2) => {
+      for (const oy of [-13, -6]) {
+        g.beginPath(); g.moveTo(x, y + oy); g.lineTo(x2, y2 + oy);
+        g.strokeStyle = OL; g.lineWidth = 5; g.stroke();
+        g.strokeStyle = '#d9a46a'; g.lineWidth = 2.6; g.stroke();
+      }
+    };
+    if (isF(i + 1)) rail(x + T, y);
+    if (isF(i - MW)) rail(x, y - T);
+    g.lineWidth = 2; g.strokeStyle = OL;
+    if (type === 'fence') {
+      shadow(g, x, y + 1, 7, 2.5);
+      rr(g, x - 3.5, y - 19, 7, 20, 2.5); g.fillStyle = '#b9824f'; g.fill(); g.stroke();
+    } else {
+      shadow(g, x, y + 1, 15, 3);
+      rr(g, x - 11, y - 17, 22, 15, 3); g.fillStyle = '#f2c862'; g.fill(); g.stroke();
+      g.beginPath(); g.moveTo(x - 4, y - 17); g.lineTo(x - 4, y - 2); g.moveTo(x + 4, y - 17); g.lineTo(x + 4, y - 2); g.stroke();
+      [-13, 13].forEach(dx => { rr(g, x + dx - 3.5, y - 23, 7, 24, 2.5); g.fillStyle = '#b9824f'; g.fill(); g.stroke(); dot(g, x + dx, y - 24, 3.2, '#ffd36b'); g.beginPath(); g.arc(x + dx, y - 24, 3.2, 0, Math.PI * 2); g.stroke(); });
+    }
+  } else if (type === 'house') {
+    shadow(g, x, y + 13, 20, 5);
+    g.lineWidth = 2.2; g.strokeStyle = OL;
+    rr(g, x - 14, y - 8, 28, 20, 4); g.fillStyle = '#e8b986'; g.fill(); g.stroke();
+    rr(g, x - 5, y - 1, 10, 13, 4); g.fillStyle = '#8a5a3b'; g.fill(); g.stroke();
+    g.beginPath(); g.moveTo(x - 20, y - 5); g.lineTo(x, y - 26); g.lineTo(x + 20, y - 5); g.closePath();
+    g.fillStyle = ROOF[(no || 0) % ROOF.length]; g.fill(); g.stroke();
+    if (no) { g.font = `bold 10px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#fff'; g.fillText(no, x, y - 12); }
+  } else if (type === 'fire') {
+    g.lineWidth = 2;
+    for (let k = 0; k < 7; k++) { const a = k / 7 * Math.PI * 2; E(g, x + Math.cos(a) * 12, y + 4 + Math.sin(a) * 6, 3.2, 2.6, '#cfc8bf'); }
+    fireC(g, x, y - 2, NOW());
+  } else if (type === 'shade') {
+    g.beginPath(); g.ellipse(x, y + 2, 20, 7, 0, 0, Math.PI * 2); g.fillStyle = 'rgba(80,55,30,.22)'; g.fill();
+    g.lineWidth = 2; g.strokeStyle = OL;
+    [-13, 13].forEach(dx => { rr(g, x + dx - 2, y - 24, 4, 26, 2); g.fillStyle = '#b9824f'; g.fill(); g.stroke(); });
+    g.beginPath(); g.moveTo(x - 19, y - 22); g.quadraticCurveTo(x, y - 36, x + 19, y - 22); g.closePath();
+    g.fillStyle = '#ff8a65'; g.fill(); g.stroke();
+    g.strokeStyle = '#fff'; g.lineWidth = 3;
+    [-8, 0, 8].forEach(dx => { g.beginPath(); g.moveTo(x + dx, y - 23); g.lineTo(x + dx * .6, y - 30); g.stroke(); });
+  }
+}
+function buildingC(g, b) {
+  const x = (b.idx % MW + .5) * T, y = (Math.floor(b.idx / MW) + .5) * T;
+  if (!b.done) {
+    g.globalAlpha = .45; structureC(g, b.type, b.idx, 0); g.globalAlpha = 1;
+    g.save(); g.setLineDash([4, 3]); g.strokeStyle = '#5b4636'; g.lineWidth = 1.5; g.strokeRect(x - T / 2 + 2, y - T / 2 + 2, T - 4, T - 4); g.restore();
+    g.fillStyle = 'rgba(0,0,0,.2)'; g.fillRect(x - 13, y + 11, 26, 4);
+    g.fillStyle = '#ffb300'; g.fillRect(x - 13, y + 11, 26 * Math.min(1, b.prog / b.need), 4);
+    return;
+  }
+  structureC(g, b.type, b.idx, b.no);
+  if (b.hp < b.maxHp) {
+    g.fillStyle = 'rgba(0,0,0,.2)'; g.fillRect(x - 13, y + 11, 26, 3);
+    g.fillStyle = '#66bb6a'; g.fillRect(x - 13, y + 11, 26 * Math.max(0, b.hp / b.maxHp), 3);
+  }
+}
+function crabC(g, c, t) {
+  const x = c.x, y = c.y - 6, s = 1.1;
+  g.save(); g.translate(x, y); g.scale(s, s);
+  shadow(g, 0, 10, 15, 3.5);
+  g.strokeStyle = OL; g.lineWidth = 2; g.lineCap = 'round';
+  const w = Math.sin(t * 12 + c.phase) * 1.5;
+  [-1, 1].forEach(sd => {
+    for (let k = 0; k < 3; k++) { g.beginPath(); g.moveTo(sd * 8, 1 + k * 2.5); g.lineTo(sd * 15, 5 + k * 3 + (k % 2 ? w : -w)); g.stroke(); }
+    g.beginPath(); g.arc(sd * 15, -6, 5.5, 0, Math.PI * 2); g.fillStyle = '#f26b5b'; g.fill(); g.stroke();
+  });
+  g.beginPath(); g.ellipse(0, 0, 12, 8, 0, 0, Math.PI * 2); g.fillStyle = '#f26b5b'; g.fill(); g.stroke();
+  [-1, 1].forEach(sd => {
+    g.beginPath(); g.moveTo(sd * 4, -6); g.lineTo(sd * 5, -12); g.stroke();
+    g.beginPath(); g.arc(sd * 5, -13, 3.2, 0, Math.PI * 2); g.fillStyle = '#fff'; g.fill(); g.stroke();
+    dot(g, sd * 4.5, -12.5, 1.4, '#222');
+    g.beginPath(); g.moveTo(sd * 2, -17); g.lineTo(sd * 8, -15); g.stroke();
+  });
+  g.restore();
+  // HP
+  g.fillStyle = 'rgba(0,0,0,.2)'; g.fillRect(x - 12, y + 14, 24, 3);
+  g.fillStyle = '#e53935'; g.fillRect(x - 12, y + 14, 24 * Math.max(0, c.hp / c.maxHp), 3);
+}
+function moodOf(a) {
+  if (a.sleeping) return 'sleep';
+  if (a.chase || a.glare) return 'sly';
+  if (a.fleeFrom || a.scared) return 'scared';
+  if (a.hp < a.maxHp * .35) return 'hurt';
+  return 'normal';
+}
+function animalScale(a) { return .85 * SIZE_SCALE[SP[a.sp].size]; }
+function darkness() {
+  const h = hour();
+  if (h >= 20 || h < 5) return .5;
+  if (h >= 18) return (h - 18) / 2 * .5;
+  if (h < 7) return (7 - h) / 2 * .5;
+  return 0;
+}
+
+function sLabel(text, x, y, size = 11) {
+  ctx.font = `bold ${size}px ${FONT}`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 3.5; ctx.strokeText(text, x, y);
+  ctx.fillStyle = '#3b2f25'; ctx.fillText(text, x, y);
+}
+function sBubble(text, x, y, think, col) {
+  ctx.font = `bold 11px ${FONT}`;
+  const w = ctx.measureText(text).width + 14, h = 20, bx = x - w / 2, by = y - h;
+  ctx.lineWidth = 2; ctx.strokeStyle = col || OL; ctx.fillStyle = '#fff';
+  rr(ctx, bx, by, w, h, 10); ctx.fill(); ctx.stroke();
+  if (think) {
+    [[x + 4, by + h + 5, 3], [x + 8, by + h + 11, 2]].forEach(([px, py, r]) => { ctx.beginPath(); ctx.arc(px, py, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); });
+  } else {
+    ctx.beginPath(); ctx.moveTo(x - 5, by + h - 1); ctx.lineTo(x, by + h + 6); ctx.lineTo(x + 5, by + h - 1); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(x - 5, by + h); ctx.lineTo(x, by + h + 6); ctx.lineTo(x + 5, by + h); ctx.stroke();
+  }
+  ctx.fillStyle = col || '#3b2f25'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(text, x, by + h / 2 + 1);
+}
+function bubbleOf(a) {
+  if (a.chase) return ['まてー！', false, '#c0392b'];
+  if (a.fleeFrom) return ['たすけてー！', false, '#c0392b'];
+  if (a.guard) return ['やめなさい！', false, '#2e7d32'];
+  if (a.glare) return ['……おいしそう', true];
+  for (const h of G.animals) if (h.glare === a && !h.dead) return ['ひぃ…', false];
+  if (a.fight) return ['⚔ えいっ！', false];
+  if (a.scared) return ['こわいよ～', false];
+  if ((a.cold || 0) > 40) return ['さむい…', false, '#1e88e5'];
+  if ((a.heat || 0) > 40) return ['あつい…', false, '#e64a19'];
+  if (a.sleeping) return ['zzz…', false];
+  if (a.hunger < 25) return ['おなかすいた…', false];
+  return null;
+}
+
+let frameN = 0;
+function render(t) {
+  frameN++;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.fillStyle = FOG; ctx.fillRect(0, 0, VW, VH);
+  if (state === 'start') return;
+  if (cam.follow) { if (cam.follow.dead) cam.follow = null; else { cam.x += (cam.follow.x - cam.x) * .12; cam.y += (cam.follow.y - cam.y) * .12; } }
+  clampCam();
+  const z = cam.z;
+  ctx.save();
+  ctx.translate(VW / 2, VH / 2); ctx.scale(z, z); ctx.translate(-cam.x, -cam.y);
+  const vx0 = cam.x - VW / 2 / z, vx1 = cam.x + VW / 2 / z, vy0 = cam.y - VH / 2 / z, vy1 = cam.y + VH / 2 / z;
+  // 島
+  const S = CH * T;
+  const lod = z > 1.05 ? 1 : z > .6 ? .6 : .36;
+  let made = 0;
+  for (let cy = Math.max(0, Math.floor(vy0 / S)); cy <= Math.min(NCY - 1, Math.floor(vy1 / S)); cy++)
+    for (let cx = Math.max(0, Math.floor(vx0 / S)); cx <= Math.min(NCX - 1, Math.floor(vx1 / S)); cx++) {
+      const key = cx + ',' + cy + ',' + lod;
+      let ch = chunkCache.get(key);
+      if (ch) { chunkCache.delete(key); chunkCache.set(key, ch); }
+      else if (made < 6) {
+        ch = renderChunk(cx, cy, lod); made++; chunkCache.set(key, ch);
+        if (chunkCache.size > 180) chunkCache.delete(chunkCache.keys().next().value);
+      } else {
+        for (const l of LODS) { ch = chunkCache.get(cx + ',' + cy + ',' + l); if (ch) break; }
+      }
+      if (ch) ctx.drawImage(ch, cx * S, cy * S, S + 1 / z, S + 1 / z);
+    }
+  // 波
+  ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+  ctx.beginPath();
+  for (let ty = Math.max(0, Math.floor(vy0 / T)); ty <= Math.min(MH - 1, Math.floor(vy1 / T)); ty++)
+    for (let tx = Math.max(0, Math.floor(vx0 / T)); tx <= Math.min(MW - 1, Math.floor(vx1 / T)); tx++) {
+      if (ter[ty * MW + tx] !== 0 || hash(tx, ty) > .05) continue;
+      const o = Math.sin(t * 1.2 + hash(ty, tx) * 6) * 5;
+      const px = (tx + .5) * T + o, py = (ty + .5) * T;
+      ctx.moveTo(px - 5, py - 2); ctx.arc(px, py + 3.5, 6, Math.PI * 1.15, Math.PI * 1.85);
+    }
+  ctx.stroke();
+  // キャンプ・動物などを手前順に並べる
+  const cp = campPos();
+  const g = ctx.createRadialGradient(cp.x, cp.y, 4, cp.x, cp.y, 90);
+  g.addColorStop(0, 'rgba(255,190,90,.35)'); g.addColorStop(1, 'rgba(255,190,90,0)');
+  ctx.fillStyle = g; ctx.fillRect(cp.x - 90, cp.y - 90, 180, 180);
+  const list = [];
+  list.push({ y: cp.y - 42, d: () => hutC(ctx, cp.x, cp.y - 64) });
+  list.push({ y: cp.y + 9, d: () => fireC(ctx, cp.x, cp.y, t) });
+  list.push({ y: cp.y + 12, d: () => crateC(ctx, cp.x + 52, cp.y) });
+  for (const gr of G.graves) list.push({ y: gr.y, d: () => graveC(ctx, gr.x, gr.y) });
+  for (const b of G.builds.values()) {
+    const bx = (b.idx % MW + .5) * T, by = (Math.floor(b.idx / MW) + .5) * T;
+    if (bx < vx0 - 60 || bx > vx1 + 60 || by < vy0 - 60 || by > vy1 + 60) continue;
+    list.push({ y: by + 2, d: () => buildingC(ctx, b) });
+  }
+  for (const a of G.animals) {
+    if (a.dead || a.inHouse) continue;
+    if (a.x < vx0 - 60 || a.x > vx1 + 60 || a.y < vy0 - 60 || a.y > vy1 + 60) continue;
+    list.push({ y: a.y, d: () => {
+      if (a === G.selected) { ctx.lineWidth = 3; ctx.strokeStyle = '#ffb300'; ctx.beginPath(); ctx.ellipse(a.x, a.y + 1, 16, 6, 0, 0, Math.PI * 2); ctx.stroke(); }
+      const inWater = ter[tileOf(a)[1] * MW + tileOf(a)[0]] === 1;
+      const shiver = (a.cold || 0) > 30 ? Math.sin(t * 50 + a.phase) * 1.2 : 0;   // 寒いとふるえる
+      drawAnimal(ctx, a.look, a.x + shiver, a.y + (inWater ? 5 : 0), animalScale(a), t, { mood: moodOf(a), flip: a.flip, phase: a.phase, walk: a.moving, work: !!a.act, sleep: a.sleeping });
+      if (inWater) { ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(a.x, a.y + 2, 13, 4, 0, 0, Math.PI * 2); ctx.stroke(); }
+      if (a.carry) { ctx.font = '13px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(ICON[a.carry.k], a.x + 12, a.y - 18); }
+    } });
+  }
+  for (const c of G.crabs) list.push({ y: c.y, d: () => crabC(ctx, c, t) });
+  const vis = G.visitor;
+  if (vis) list.push({ y: vis.y, d: () => {
+    ctx.save(); ctx.setLineDash([4, 3]); ctx.lineWidth = 2.5; ctx.strokeStyle = '#43a047';
+    ctx.beginPath(); ctx.ellipse(vis.x, vis.y + 1, 18, 7, 0, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+    drawAnimal(ctx, vis.look, vis.x, vis.y, animalScale(vis), t, { phase: vis.phase, flip: vis.flip, walk: vis.moving });
+  } });
+  list.sort((p, q) => p.y - q.y).forEach(o => o.d());
+  // 建てるモード：置く場所の見本
+  if (buildMode && hoverI >= 0) {
+    const hx = (hoverI % MW) * T, hy = Math.floor(hoverI / MW) * T;
+    if (buildMode === 'remove') {
+      if (G.builds.has(hoverI)) { ctx.fillStyle = 'rgba(229,57,53,.35)'; ctx.fillRect(hx, hy, T, T); }
+    } else {
+      const ok = canPlace(hoverI);
+      ctx.fillStyle = ok ? 'rgba(76,175,80,.3)' : 'rgba(229,57,53,.3)'; ctx.fillRect(hx, hy, T, T);
+      if (ok) { ctx.globalAlpha = .55; structureC(ctx, buildMode, hoverI, 0); ctx.globalAlpha = 1; }
+    }
+  }
+  // 追いかけっこ・なかよし度の線
+  ctx.save(); ctx.setLineDash([6, 5]); ctx.lineDashOffset = -t * 20; ctx.lineWidth = 2.5;
+  for (const h of G.animals) {
+    if (h.dead) continue;
+    if (h.chase) { ctx.strokeStyle = 'rgba(229,57,53,.9)'; ctx.beginPath(); ctx.moveTo(h.x, h.y - 10); ctx.lineTo(h.chase.p.x, h.chase.p.y - 10); ctx.stroke(); }
+    else if (h.glare) { ctx.strokeStyle = 'rgba(229,57,53,' + (.35 + .3 * Math.abs(Math.sin(t * 4))) + ')'; ctx.beginPath(); ctx.moveTo(h.x, h.y - 10); ctx.lineTo(h.glare.x, h.glare.y - 10); ctx.stroke(); }
+  }
+  const sel = G.selected;
+  if (sel && !sel.dead) {
+    ctx.lineWidth = 2;
+    for (const o of alive()) {
+      if (o === sel || dist(o, sel) > 25 * T) continue;
+      const r = getRel(sel, o);
+      ctx.strokeStyle = r >= 60 ? 'rgba(76,175,80,.55)' : r < 35 ? 'rgba(229,57,53,.45)' : 'rgba(120,120,120,.25)';
+      ctx.beginPath(); ctx.moveTo(sel.x, sel.y - 8); ctx.lineTo(o.x, o.y - 8); ctx.stroke();
+    }
+  }
+  ctx.restore();
+  // 雲（未探検）
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(fogCv, 0, 0, MW * T, MH * T);
+  ctx.restore();
+  // 夜
+  const dk = darkness();
+  if (dk > 0) {
+    ctx.fillStyle = `rgba(25,35,90,${dk})`; ctx.fillRect(0, 0, VW, VH);
+    ctx.globalCompositeOperation = 'lighter';
+    heatSources().forEach((s, k) => {
+      const [fx0, fy0] = w2s(s.x, s.y);
+      const r = (k === 0 ? 170 : 110) * z;
+      if (fx0 < -r || fx0 > VW + r || fy0 < -r || fy0 > VH + r) return;
+      const lg = ctx.createRadialGradient(fx0, fy0, 0, fx0, fy0, r);
+      lg.addColorStop(0, `rgba(255,170,80,${dk * .75})`); lg.addColorStop(1, 'rgba(255,170,80,0)');
+      ctx.fillStyle = lg; ctx.fillRect(fx0 - r, fy0 - r, r * 2, r * 2);
+    });
+    ctx.globalCompositeOperation = 'source-over';
+  }
+  // 天気
+  const mod = (v, m) => ((v % m) + m) % m;
+  if (G.weather === '雨') {
+    ctx.fillStyle = 'rgba(60,80,120,.12)'; ctx.fillRect(0, 0, VW, VH);
+    ctx.strokeStyle = 'rgba(210,225,255,.6)'; ctx.lineWidth = 1.3; ctx.beginPath();
+    for (let k = 0; k < 160; k++) {
+      const y = mod(hash(k, 4) * VH + t * 700 * (.8 + hash(k, 5) * .4), VH + 40) - 20;
+      const x = mod(hash(k, 3) * VW - y * .25, VW);
+      ctx.moveTo(x, y); ctx.lineTo(x - 4, y + 14);
+    }
+    ctx.stroke();
+  } else if (G.weather === '雪') {
+    ctx.fillStyle = 'rgba(200,220,255,.10)'; ctx.fillRect(0, 0, VW, VH);
+    ctx.fillStyle = 'rgba(255,255,255,.9)';
+    for (let k = 0; k < 140; k++) {
+      const y = mod(hash(k, 4) * VH + t * 35 * (.6 + hash(k, 5) * .8), VH + 20) - 10;
+      const x = mod(hash(k, 3) * VW + Math.sin(t * .8 + k) * 18, VW);
+      ctx.beginPath(); ctx.arc(x, y, 1.3 + hash(k, 6) * 2, 0, Math.PI * 2); ctx.fill();
+    }
+  } else if (G.weather === '猛暑') {
+    ctx.fillStyle = 'rgba(255,150,50,.10)'; ctx.fillRect(0, 0, VW, VH);
+  } else if (G.weather === 'くもり') {
+    ctx.fillStyle = 'rgba(110,120,135,.10)'; ctx.fillRect(0, 0, VW, VH);
+  }
+  // 名前・吹き出し（画面の大きさで表示）
+  if (z > .5) for (const b of G.builds.values()) {
+    if (b.type !== 'house' || !b.done || !G.animals.some(a => a.inHouse === b)) continue;
+    const [sx, sy] = w2s((b.idx % MW + .5) * T, (Math.floor(b.idx / MW) + .5) * T);
+    if (sx > -80 && sx < VW + 80 && sy > -80 && sy < VH + 80) sBubble('zzz…', sx, sy - 28 * z - 4);
+  }
+  for (const a of G.animals) {
+    if (a.dead || a.inHouse) continue;
+    const [sx, sy] = w2s(a.x, a.y);
+    if (sx < -80 || sx > VW + 80 || sy < -80 || sy > VH + 80) continue;
+    const hs = 42 * animalScale(a) * z;
+    if (z > .45) sLabel(a.name, sx, sy + 10 + 4 * z);
+    const b = bubbleOf(a);
+    if (b && (z > .5 || a.chase || a.fleeFrom)) sBubble(b[0], sx, sy - hs - 6, b[1], b[2]);
+    else if (z > .5 && (a.act || a.task) && !a.sleeping) {
+      const ic = a.act ? JOB_ICON[a.act.n] : a.task === 'explore' ? JOB_ICON.explore : null;
+      if (ic) { ctx.font = '13px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(ic, sx, sy - hs - 6); }
+    }
+  }
+  if (G.visitor) {
+    const v = G.visitor, [sx, sy] = w2s(v.x, v.y);
+    if (z > .45) sLabel(v.name + '（' + SP[v.sp].n + '）', sx, sy + 10 + 4 * z);
+    sBubble('なかまにして…？', sx, sy - 42 * animalScale(v) * z - 6, false, '#2e7d32');
+  }
+  for (const f of G.fx) {
+    const [sx, sy] = w2s(f.x, f.y);
+    ctx.globalAlpha = Math.min(1, f.life);
+    ctx.font = `bold 13px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.strokeText(f.text, sx, sy);
+    ctx.fillStyle = f.col; ctx.fillText(f.text, sx, sy);
+    ctx.globalAlpha = 1;
+  }
+  if (frameN % 6 === 0) drawMini();
+}
+
+// =====================================================
+// 画面のパネル
+// =====================================================
+const $ = id => document.getElementById(id);
+function statsHTML(a) {
+  return STAT_N.map(([k, n]) => `<div class="st"><span>${n}</span><b style="--v:${a.st[k] * 10}${k === 'app' ? ';--c:#e57373' : ''}"></b><em>${a.st[k]}</em></div>`).join('');
+}
+function jobsHTML(a) {
+  return ['chop', 'gather', 'fish', 'mine', 'build', 'explore', 'fight'].map(j => `<div>${JOB_ICON[j]} ${j === 'fight' ? '戦い' : JOBS[j]} <span class="stars">${starStr(eff(a, j))}</span></div>`).join('');
+}
+function traitsHTML(a) {
+  const c = SP[a.sp].comfort;
+  return a.traits.map(t => `<span class="chip" title="${t.d}">${t.n}：${t.d}</span>`).join('') + `<span class="chip" style="background:#e3f2fd">🌡 快適 ${c[0]}〜${c[1]}℃</span>`;
+}
+function doingText(a) {
+  if (a.dead) return '💀 天国にいます';
+  if (a.chase) return `⚠ ${a.chase.p.name}を追いかけている！`;
+  if (a.fleeFrom) return `⚠ ${a.fleeFrom.name}から逃げている！`;
+  if (a.guard) return `🛡 ${a.guard.name}を止めに向かっている`;
+  if (a.fight) return '⚔ 大ガニと戦っている';
+  if (a.sleeping) return a.inHouse ? `🏠 家${a.inHouse.no}の中で眠っている` : '💤 焚き火のそばで眠っている';
+  if (a.act) return { chop: '🪓 木をかじって（切って）いる', gather: '🫐 木の実を集めている', fish: '🎣 魚をとっている', mine: '⛏ 石を集めている', build: '🔨 建てている', eat: '🍽 食べている', warm: '🔥 火にあたって温まっている', cool: '🌴 涼しい場所で休んでいる' }[a.act.n] || '';
+  if (a.task === 'warm') return '🔥 温まりに向かっている';
+  if (a.task === 'cool') return '🌴 涼しい場所へ向かっている';
+  if (a.task === 'deliver') return `📦 ${a.carry ? ICON[a.carry.k] + 'を' : ''}キャンプへ運んでいる`;
+  if (a.task === 'eat') return '🍽 ごはんを食べに向かっている';
+  if (a.task === 'sleep') return '🏕 寝床に向かっている';
+  if (a.task === 'explore') return '🧭 島を探検している';
+  if (a.task && JOBS[a.task]) return `${JOB_ICON[a.task] || ''} ${JOBS[a.task]}に向かっている`;
+  return '🌿 ひとやすみ中';
+}
+function needBar(label, v, col) { return `<div class="st"><span>${label}</span><b style="--v:${v};--c:${col}"></b><em>${Math.round(v)}</em></div>`; }
+const pcv = $('pcv'), pctx = pcv.getContext('2d');
+function select(a) {
+  G.selected = a;
+  if (!a) { $('panel').style.display = 'none'; cam.follow = null; buildTeamSel(); return; }
+  $('panel').style.display = 'block';
+  $('pname').textContent = a.name;
+  $('psp').textContent = `${SP[a.sp].n}・${DIET_N[SP[a.sp].diet]}`;
+  $('ptraits').innerHTML = traitsHTML(a);
+  $('pstats').innerHTML = statsHTML(a);
+  $('pjobs').innerHTML = jobsHTML(a);
+  $('pspx').textContent = '🐾 ' + SP[a.sp].sp;
+  const js = $('jobSel'); js.innerHTML = '';
+  for (const k in JOBS) {
+    const op = document.createElement('option'); op.value = k;
+    op.textContent = JOBS[k] + (k === 'auto' ? '（得意な仕事を自分で選ぶ）' : '　' + starStr(eff(a, k)));
+    js.appendChild(op);
+  }
+  js.value = a.job;
+  fillHomeSel();
+  $('followBtn').textContent = cam.follow === a ? '🎥 ついていくのをやめる' : '🎥 ついていく';
+  refreshPanel(true);
+  buildTeamSel();
+}
+function refreshPanel() {
+  const a = G.selected; if (!a) return;
+  const cf = SP[a.sp].comfort, ft = Math.round(a.felt ?? G.temp);
+  const ftCol = ft < cf[0] ? '#1e88e5' : ft > cf[1] ? '#e64a19' : '#2e7d32';
+  $('pneeds').innerHTML = needBar('おなか', a.hunger, a.hunger < 25 ? '#e53935' : '#f0a04b') + needBar('元気', a.energy, '#a1887f') + needBar('HP', a.hp / a.maxHp * 100, '#66bb6a').replace(`<em>${Math.round(a.hp / a.maxHp * 100)}</em>`, `<em>${Math.max(0, Math.round(a.hp))}</em>`)
+    + needBar('寒さ', a.cold || 0, '#42a5f5') + needBar('暑さ', a.heat || 0, '#ff7043')
+    + `<div style="font-size:12px">🌡 体感 <b style="color:${ftCol}">${ft}℃</b>（この子が快適なのは ${cf[0]}〜${cf[1]}℃）</div>`;
+  $('pdoing').textContent = doingText(a);
+  const rels = G.animals.filter(o => o !== a).map(o => ({ o, r: getRel(a, o) })).sort((p, q) => q.r - p.r);
+  $('prels').innerHTML = rels.map(({ o, r }) => {
+    const col = r >= 60 ? '#4caf50' : r < 35 ? '#e53935' : '#f0a04b';
+    const warn = (isPreyOf(a, o) || isPreyOf(o, a)) && r < 35 ? ' ⚠' : '';
+    return `<div class="rel"><span>${o.dead ? '💀' : ''}${o.name}（${SP[o.sp].n}）${warn}</span><b style="display:inline-block;width:90px;height:7px;border-radius:4px;background:linear-gradient(to right,${col} ${r}%,#eee 0)"></b><em style="font-style:normal">${Math.round(r)}</em></div>`;
+  }).join('');
+}
+$('pclose').onclick = () => select(null);
+$('jobSel').onchange = e => { const a = G.selected; if (!a) return; a.job = e.target.value; interrupt(a); a.carry && deliver(a); addLog(`📋 ${a.name}の担当を「${JOBS[a.job]}」にしました`); };
+// 寝る場所（焚き火のそば／家）
+function fillHomeSel() {
+  const a = G.selected; if (!a) return;
+  const hs = $('homeSel'); hs.innerHTML = '';
+  const op0 = document.createElement('option'); op0.value = ''; op0.textContent = '🔥 焚き火のそば'; hs.appendChild(op0);
+  for (const b of G.builds.values()) {
+    if (b.type !== 'house' || !b.done) continue;
+    const names = b.sleepers.map(id => G.animals.find(x => x.id === id).name);
+    const op = document.createElement('option'); op.value = b.idx;
+    op.textContent = `🏠 家${b.no}（${names.length ? names.join('・') : 'だれも住んでいない'}　${names.length}/2）`;
+    if (names.length >= 2 && a.home !== b) op.disabled = true;
+    hs.appendChild(op);
+  }
+  hs.value = a.home ? a.home.idx : '';
+}
+$('homeSel').onchange = e => {
+  const a = G.selected; if (!a || a.dead) return;
+  const v = e.target.value;
+  const h = v === '' ? null : G.builds.get(+v);
+  if (h && h.sleepers.length >= 2 && a.home !== h) { addLog(`家${h.no}はもういっぱいです`, 'bad'); fillHomeSel(); return; }
+  setHome(a, h);
+  addLog(h ? `🏠 ${a.name}は家${h.no}で眠ることになりました` : `🔥 ${a.name}は焚き火のそばで眠ることになりました`);
+  fillHomeSel();
+};
+$('feedBtn').onclick = () => { if (G.selected) feed(G.selected); };
+$('followBtn').onclick = () => { const a = G.selected; if (!a) return; cam.follow = cam.follow === a ? null : a; $('followBtn').textContent = cam.follow === a ? '🎥 ついていくのをやめる' : '🎥 ついていく'; };
+
+// ---------- 下の動物ボタン ----------
+const teamEl = $('team');
+const teamCv = [];
+function buildTeam() {
+  teamEl.innerHTML = ''; teamCv.length = 0;
+  for (const a of G.animals) {
+    const d = document.createElement('div'); d.className = 'mem' + (a.dead ? ' dead' : '');
+    const c = document.createElement('canvas'); c.width = 96; c.height = 80;
+    d.appendChild(c);
+    const nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = (a.dead ? '💀' : '') + a.name; d.appendChild(nm);
+    const bar = document.createElement('div'); bar.className = 'bar'; bar.innerHTML = '<i></i>'; d.appendChild(bar);
+    d.onclick = () => { select(a); if (!a.dead) { cam.x = a.x; cam.y = a.y; } };
+    teamEl.appendChild(d);
+    teamCv.push({ a, c, d, bar: bar.firstChild });
+  }
+  buildTeamSel();
+}
+function buildTeamSel() { for (const m of teamCv) m.d.classList.toggle('sel', m.a === G.selected); }
+function drawTeam(t) {
+  for (const m of teamCv) {
+    const g = m.c.getContext('2d');
+    g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, 96, 80);
+    if (m.a.dead) { graveC(g, 48, 70); continue; }
+    drawAnimal(g, m.a.look, 48, 74, 1.55, t, { mood: moodOf(m.a), phase: m.a.phase, sleep: m.a.sleeping });
+    m.bar.style.width = m.a.hunger + '%';
+    m.bar.style.background = m.a.hunger < 25 ? '#e53935' : '#f0a04b';
+  }
+}
+function updateHUD() {
+  const h = hour(), hh = Math.floor(h), mm = Math.floor((h - hh) * 6) * 10;
+  const icon = isNight() ? '🌙' : h < 7 ? '🌅' : h >= 18 ? '🌇' : '☀';
+  const ex = Math.round(G.landExplored / Math.max(1, G.landTotal) * 100);
+  const S = SEASONS[seasonIdx()];
+  $('clock').textContent = `${yearN()}年目 ${S.icon}${S.n} ${seasonDay()}日目 ${icon}${hh}:${String(mm).padStart(2, '0')}　${WEATHER[G.weather].icon}${G.weather} ${Math.round(G.temp)}℃　🧭 探検 ${ex}%`;
+  const s = G.stock;
+  $('stock').textContent = `🪵 木 ${s.wood}　🪨 石 ${s.stone}　🫐 木の実 ${s.berry}　🐟 魚 ${s.fish}`;
+}
+
+// ---------- 操作（ドラッグ・ズーム・クリック） ----------
+const ptrs = new Map();
+let downInfo = null, pinch = null;
+// ---------- 建てるモード ----------
+let buildMode = null, hoverI = -1, lastPaint = -1, paintShort = false;
+const BHINT = {
+  fence: '🪵 柵：クリックかドラッグで並べて置けます（右ドラッグで地図移動・Escで終了）',
+  gate: '🚪 門：柵の切れ目に置くと、仲間だけ通れる出入口になります',
+  house: '🏠 家：置くと建築担当が建てに行きます。2匹まで中で眠れます（冬は暖かく、夏は涼しい）',
+  fire: '🔥 たき火：まわり4マスくらいが暖かくなります。冬の仕事場の近くにあると便利',
+  shade: '⛱ 日よけ：昼間、まわり2マスが涼しくなります。夏の暑さ対策に',
+  remove: '🧹 建物をクリック：予定は取り消し（材料ぜんぶ返却）、完成品は解体（材料半分返却）',
+};
+function setBuildMode(m) {
+  buildMode = m && m !== 'none' ? m : null;
+  document.querySelectorAll('#bTools button').forEach(b => b.classList.toggle('on', b.dataset.b === buildMode));
+  $('bHint').style.display = buildMode ? 'block' : 'none';
+  if (buildMode) $('bHint').textContent = BHINT[buildMode];
+  if (!buildMode) hoverI = -1;
+}
+$('bOpen').onclick = () => {
+  const open = $('bTools').style.display !== 'flex';
+  $('bTools').style.display = open ? 'flex' : 'none';
+  $('bOpen').classList.toggle('on', open);
+  if (!open) setBuildMode(null);
+};
+document.querySelectorAll('#bTools button').forEach(b => b.onclick = () => {
+  if (b.dataset.b === 'none') { $('bTools').style.display = 'none'; $('bOpen').classList.remove('on'); setBuildMode(null); return; }
+  setBuildMode(buildMode === b.dataset.b ? null : b.dataset.b);
+});
+function tileAt(sx, sy) {
+  const [wx, wy] = s2w(sx, sy);
+  const x = Math.floor(wx / T), y = Math.floor(wy / T);
+  return x < 0 || y < 0 || x >= MW || y >= MH ? -1 : y * MW + x;
+}
+function buildAt(sx, sy, drag) {
+  const i = tileAt(sx, sy);
+  if (i < 0 || i === lastPaint) return;
+  lastPaint = i;
+  if (buildMode === 'remove') { removeAt(i); return; }
+  const r = placeBuild(buildMode, i, drag && paintShort);
+  if (r === 'short') paintShort = true;
+}
+cv.addEventListener('contextmenu', e => e.preventDefault());
+cv.addEventListener('pointerdown', e => {
+  cv.setPointerCapture(e.pointerId);
+  ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (ptrs.size === 1) {
+    downInfo = { x: e.clientX, y: e.clientY, t: performance.now(), moved: 0, build: !!buildMode && e.button === 0, touch: e.pointerType !== 'mouse' };
+    lastPaint = -1; paintShort = false;
+    // マウスはすぐ置く。指のときは、2本指操作とまちがえないよう少し動かしてから置く
+    if (downInfo.build && buildMode === 'fence' && !downInfo.touch) buildAt(e.clientX, e.clientY, false);
+    if (downInfo.build) hoverI = tileAt(e.clientX, e.clientY);
+  }
+  if (ptrs.size === 2) {
+    const [p, q] = [...ptrs.values()];
+    pinch = { d: Math.hypot(p.x - q.x, p.y - q.y), z: cam.z, mx: (p.x + q.x) / 2, my: (p.y + q.y) / 2 };
+    downInfo = null;
+  }
+  tutFlag('cam');
+});
+cv.addEventListener('pointermove', e => {
+  if (buildMode && e.pointerType === 'mouse') hoverI = tileAt(e.clientX, e.clientY);
+  const p = ptrs.get(e.pointerId); if (!p) return;
+  const dx = e.clientX - p.x, dy = e.clientY - p.y;
+  p.x = e.clientX; p.y = e.clientY;
+  if (ptrs.size === 1 && downInfo && downInfo.build) {
+    downInfo.moved += Math.abs(dx) + Math.abs(dy);
+    hoverI = tileAt(e.clientX, e.clientY);
+    if (buildMode === 'fence' && (!downInfo.touch || downInfo.moved > 8)) {
+      if (downInfo.touch && lastPaint < 0) buildAt(downInfo.x, downInfo.y, false);
+      buildAt(e.clientX, e.clientY, true);
+    }
+    return;
+  }
+  if (ptrs.size === 1) {
+    cam.x -= dx / cam.z; cam.y -= dy / cam.z;
+    if (downInfo) downInfo.moved += Math.abs(dx) + Math.abs(dy);
+    if (downInfo && downInfo.moved > 6) { cam.follow = null; tutFlag('moved'); }
+  } else if (ptrs.size === 2 && pinch) {
+    // 2本指：広げる・つまむで拡大縮小、そのまま動かすと地図が動く
+    const [a, b] = [...ptrs.values()];
+    const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+    const [wx, wy] = s2w(mx, my);
+    cam.z = clamp(pinch.z * Math.hypot(a.x - b.x, a.y - b.y) / pinch.d, .35, 2.2);
+    const [nx, ny] = s2w(mx, my);
+    cam.x += wx - nx; cam.y += wy - ny;
+    cam.x -= (mx - pinch.mx) / cam.z; cam.y -= (my - pinch.my) / cam.z;
+    pinch.mx = mx; pinch.my = my;
+    cam.follow = null; tutFlag('moved');
+  }
+});
+const endPtr = e => {
+  if (!ptrs.has(e.pointerId)) return;
+  ptrs.delete(e.pointerId);
+  if (ptrs.size < 2) pinch = null;
+  if (ptrs.size === 0 && downInfo && downInfo.build) {
+    if ((buildMode !== 'fence' || downInfo.touch) && downInfo.moved < 10) buildAt(e.clientX, e.clientY, false);
+  } else if (ptrs.size === 0 && downInfo && downInfo.moved < 6 && performance.now() - downInfo.t < 500) clickAt(e.clientX, e.clientY, downInfo.touch);
+  if (ptrs.size === 0) downInfo = null;
+};
+cv.addEventListener('pointerup', endPtr);
+cv.addEventListener('pointercancel', endPtr);
+cv.addEventListener('wheel', e => {
+  e.preventDefault();
+  const [wx, wy] = s2w(e.clientX, e.clientY);
+  cam.z = clamp(cam.z * Math.exp(-e.deltaY * .0015), .35, 2.2);
+  const [nx, ny] = s2w(e.clientX, e.clientY);
+  cam.x += wx - nx; cam.y += wy - ny;
+  tutFlag('moved');
+}, { passive: false });
+function clickAt(sx, sy, touch) {
+  if (state !== 'play') return;
+  const [wx, wy] = s2w(sx, sy);
+  let best = null, bd = (touch ? 44 : 26) / Math.min(1, cam.z);
+  for (const a of alive()) { if (a.inHouse) continue; const d = Math.hypot(a.x - wx, a.y - 14 - wy); if (d < bd) { bd = d; best = a; } }
+  select(best);
+}
+miniCv.addEventListener('pointerdown', e => {
+  const r = miniCv.getBoundingClientRect();
+  cam.x = (e.clientX - r.left) / r.width * MW * T; cam.y = (e.clientY - r.top) / r.height * MH * T; cam.follow = null;
+});
+document.querySelectorAll('#speed button[data-s]').forEach(b => b.onclick = () => {
+  G.speed = +b.dataset.s;
+  document.querySelectorAll('#speed button[data-s]').forEach(x => x.classList.toggle('on', x === b));
+});
+addEventListener('keydown', e => {
+  if (e.code === 'Space' && state === 'play') { e.preventDefault(); const b = document.querySelector(G.speed ? '#speed button[data-s="0"]' : '#speed button[data-s="1"]'); b.click(); }
+  if (e.code === 'Escape') { if ($('zukan').style.display === 'block') closeZukan(); else setBuildMode(null); }
+});
+$('helpBtn').onclick = () => { $('help').style.display = 'flex'; };
+$('helpClose').onclick = () => { $('help').style.display = 'none'; };
+
+// =====================================================
+// 新しい仲間（浜辺に流れつく）
+// =====================================================
+const MAX_TEAM = 12;
+const START_SPOTS = [[-2, 1], [2, 1], [-2, -1], [2, -1], [0, 2], [-1, 2], [1, 2], [-3, 0], [3, 0], [-3, 1], [3, 1], [0, 3]];
+function relNote(v, list) {   // 相性の注意
+  const out = [];
+  const eats = list.filter(o => isPreyOf(v, o)).map(o => o.name);
+  const eatenBy = list.filter(o => isPreyOf(o, v)).map(o => o.name);
+  if (eats.length) out.push(`⚠ おなかがすくと ${eats.join('・')} をねらうかも`);
+  if (eatenBy.length) out.push(`⚠ ${eatenBy.join('・')} にねらわれるかも`);
+  if (!out.length) out.push('相性の心配はなさそう');
+  return out.join('　');
+}
+function spawnVisitor() {
+  if (G.visitor || alive().length >= MAX_TEAM) return;
+  // キャンプから近い浜辺を探す（近い順に40か所の中から選ぶ）
+  const cands = [];
+  bfs(G.cx, G.cy, landWalk, (x, y, i, d) => { if (d >= 7 && ter[i] === 2 && cands.length < 40) cands.push(i); return false; }, 1e9, 90);
+  if (!cands.length) return;
+  const i0 = pick(cands);
+  const used = new Set(G.animals.map(a => a.name));
+  const v = makeAnimal(pick(Object.keys(SP)), used);
+  v.x = (i0 % MW + .5) * T; v.y = (Math.floor(i0 / MW) + .5) * T;
+  v.until = dayF() + 1;
+  G.visitor = v;
+  reveal(i0 % MW, Math.floor(i0 / MW), 5);
+  const sp = SP[v.sp];
+  const el = document.createElement('div'); el.className = 'alert friend';
+  el.innerHTML = `<span>🐾 浜辺に <b>${v.name}</b>（${sp.n}・${DIET_N[sp.diet]}）が流れついた！ 仲間にする？</span>
+    <span class="small">${v.traits.map(t => t.n).join('・')}／力${v.st.str} 速さ${v.st.spd} 器用さ${v.st.dex} 体力${v.st.hp}／快適 ${sp.comfort[0]}〜${sp.comfort[1]}℃<br>${relNote(v, alive())}</span>`;
+  const yes = document.createElement('button'); yes.textContent = '🐾 仲間にする'; yes.onclick = () => acceptVisitor();
+  const look = document.createElement('button'); look.textContent = '👀 見る'; look.onclick = () => { cam.x = v.x; cam.y = v.y; cam.follow = null; };
+  const no = document.createElement('button'); no.textContent = '見送る'; no.onclick = () => dismissVisitor(true);
+  el.append(yes, look, no);
+  alertsEl.appendChild(el);
+  G.visitorEl = el;
+  addLog(`🐾 浜辺に${v.name}（${sp.n}）が流れついた！`, 'good');
+  if (G.autoAccept) acceptVisitor();   // 確認用
+}
+function acceptVisitor() {
+  const v = G.visitor; if (!v) return;
+  v.until = null;
+  v.spot = START_SPOTS[G.animals.length % START_SPOTS.length];
+  for (const o of G.animals) initRel(v, o);
+  G.animals.push(v);
+  G.visitor = null; if (G.visitorEl) G.visitorEl.remove(); G.visitorEl = null;
+  v.idle = .5;
+  addLog(`🎉 ${v.name}（${SP[v.sp].n}）が仲間になった！ これで${alive().length}匹です`, 'good');
+  buildTeam();
+}
+function dismissVisitor(byPlayer) {
+  const v = G.visitor; if (!v) return;
+  G.visitor = null; if (G.visitorEl) G.visitorEl.remove(); G.visitorEl = null;
+  addLog(byPlayer ? `${v.name}を見送りました。またどこかで…` : `${v.name}はどこかへ行ってしまった…`);
+}
+function updateVisitor(dt) {
+  const v = G.visitor; if (!v) return;
+  if (dayF() > v.until) { dismissVisitor(false); return; }
+  v.wt = (v.wt || 0) - dt;   // その場で少しうろうろする
+  if (v.wt <= 0) { v.wt = rand(2, 4); v.tx = v.x + rand(-T, T); v.ty = v.y + rand(-T, T); }
+  v.moving = false;
+  if (v.tx != null) moveToward(v, v.tx, v.ty, spd(v) * .4 * dt, v.walk);
+}
+
+// =====================================================
+// チュートリアル（目標を1つずつ）
+// =====================================================
+const tutFlags = new Set();
+function tutFlag(k) { tutFlags.add(k); }
+const countB = (type, done = true) => [...G.builds.values()].filter(b => b.type === type && (!done || b.done)).length;
+const isPhone = () => matchMedia('(pointer: coarse)').matches || innerWidth < 700;
+const TUT = [
+  { t: 'ようこそ、無人島へ！', x: () => '2匹の動物が島に流れつきました。動物たちは<b>自分で考えて動きます</b>（食べる・眠る・仕事をする）。あなたは見守りながら、仕事や建物を決めてあげてください。', next: true },
+  { t: '島を見まわそう', x: () => isPhone() ? '指で画面をなぞると島が動きます。<b>2本指</b>で広げたりつまんだりすると、拡大・縮小できます。' : 'マウスで<b>ドラッグ</b>すると島が動きます。<b>ホイール</b>で拡大・縮小できます。右下の小さな地図をクリックしても移動できます。', ok: () => tutFlags.has('moved') },
+  { t: '動物をタップしてみよう', x: () => '島の動物か、画面下の<b>動物ボタン</b>をタップしてください。能力・おなか・なかよし度などが見られます。', ok: () => !!G.selected, hl: 'team' },
+  { t: '仕事を決めてみよう', x: () => '動物のパネルの「<b>担当の仕事</b>」を「<b>木こり</b>」にしてみましょう。★が多い仕事ほど得意です。「おまかせ」なら自分で得意な仕事を選びます。', ok: () => G.animals.some(a => a.job === 'chop'), hl: 'jobSel', next: true },
+  { t: '木を15こ集めよう', x: () => '動物が木を切ってキャンプへ運びます。待つのが長いときは、右上の <b>▶▶</b> で早送りできます。', p: () => `🪵 木 ${Math.min(15, G.stock.wood)} / 15`, ok: () => G.stock.wood >= 15, hl: 'speed', reward: () => { G.stock.berry += 5; return '🫐 木の実 +5'; } },
+  { t: 'たき火を建てよう', x: () => '右下の「<b>🔨 建てる</b>」→「<b>🔥 たき火</b>」を選んで、キャンプの近く（緑の四角が出る場所）をタップします。置くと「建築」担当の動物が建てに行きます。たき火のまわりは暖かくなります。', ok: () => countB('fire') >= 1, hl: 'bOpen', reward: () => { G.stock.wood += 5; return '🪵 木 +5'; } },
+  { t: '石を10こ集めよう', x: () => '家を建てるには石が必要です。だれかの担当を「<b>⛏ 石集め</b>」にすると早く集まります（岩場や石のある場所へ行きます）。', p: () => `🪨 石 ${Math.min(10, G.stock.stone)} / 10`, ok: () => G.stock.stone >= 10 },
+  { t: '家を建てよう', x: () => '「🔨 建てる」→「<b>🏠 家</b>」（木25・石10）。家は2匹まで中で眠れて、<b>カニにおそわれず</b>、冬は暖かく夏は涼しい場所です。', p: () => G.stock.wood < 25 || G.stock.stone < 10 ? `材料：🪵 ${G.stock.wood}/25　🪨 ${G.stock.stone}/10` : '材料はそろっています！', ok: () => countB('house') >= 1, hl: 'bOpen', reward: () => { G.stock.fish += 5; return '🐟 魚 +5'; } },
+  { t: 'はじめての夜をこえよう', x: () => '夜はみんな焚き火のそばや家で眠ります。<b>2日目の夜からは、浜辺に大ガニが上陸</b>してきます。戦いに強い動物が迎えうちます。', p: () => `${G.day}日目`, ok: () => G.day >= 2 && hour() >= 6 },
+  { t: '新しい仲間をむかえよう', x: () => 'ときどき<b>浜辺に動物が流れつきます</b>。お知らせの「🐾 仲間にする」で仲間になります。肉食の動物は、おなかがすくと小さな草食動物をねらうことがあるので、<b>相性の注意</b>も見て選びましょう。', p: () => `仲間 ${alive().length}匹（3匹になったらクリア）`, ok: () => alive().length >= 3, reward: () => { G.stock.berry += 5; G.stock.fish += 5; return '🫐 +5　🐟 +5'; } },
+  { t: '柵と門でキャンプを囲もう', x: () => '「🔨 建てる」→「<b>🪵 柵</b>」は、なぞるように<b>ドラッグ</b>すると並べて置けます。柵はカニも動物も通れないので、出入り口に「<b>🚪 門</b>」をつけましょう（仲間だけ通れます）。', p: () => `柵 ${Math.min(10, countB('fence'))} / 10　門 ${Math.min(1, countB('gate'))} / 1`, ok: () => countB('fence') >= 10 && countB('gate') >= 1, hl: 'bOpen' },
+  { t: '冬にそなえよう', x: () => '冬は木の実が実らず、魚も減ります。秋のうちに<b>食べ物をためて</b>おきましょう。寒さに弱い動物は家に住ませて、たき火のそばで温めてあげてください。', p: () => `🫐+🐟 ${Math.min(40, G.stock.berry + G.stock.fish)} / 40`, ok: () => G.stock.berry + G.stock.fish >= 40 },
+  { t: 'チュートリアルクリア！🎉', x: () => 'これで島の暮らしの基本はばっちりです。ここからは自由に、動物たちと島を開拓してください。困ったら右上の「？」を見てくださいね。', next: true, last: true },
+];
+let tutHl = null;
+function tutRender() {
+  const box = $('tut');
+  if (!G.tut || !G.tut.on || G.tut.step >= TUT.length) { box.style.display = 'none'; if (tutHl) { tutHl.classList.remove('pulse'); tutHl = null; } return; }
+  const s = TUT[G.tut.step];
+  box.style.display = 'block';
+  $('tutTitle').textContent = '📘 ' + s.t;
+  $('tutNo').textContent = `${G.tut.step + 1} / ${TUT.length}　${box.classList.contains('mini') ? '▼ ひらく' : '▲ たたむ'}`;
+  $('tutText').innerHTML = s.x();
+  $('tutProg').textContent = s.p ? s.p() : '';
+  $('tutNext').style.display = s.next ? '' : 'none';
+  $('tutNext').textContent = s.last ? 'とじる' : '次へ ▶';
+  const hl = s.hl ? $(s.hl) : null;
+  if (hl !== tutHl) { if (tutHl) tutHl.classList.remove('pulse'); if (hl) hl.classList.add('pulse'); tutHl = hl; }
+}
+function tutAdvance() {
+  const s = TUT[G.tut.step];
+  if (s.reward) addLog(`📘 目標たっせい！ ごほうび：${s.reward()}`, 'good');
+  else if (!s.next) addLog('📘 目標たっせい！', 'good');
+  G.tut.step++;
+  if (G.tut.step >= TUT.length) G.tut.on = false;
+  tutRender();
+}
+function tutCheck() {
+  if (!G.tut || !G.tut.on || G.tut.step >= TUT.length) return;
+  const s = TUT[G.tut.step];
+  if (s.ok && s.ok()) tutAdvance();
+  else $('tutProg').textContent = s.p ? s.p() : '';
+}
+$('tutNext').onclick = () => tutAdvance();
+document.querySelector('#tut .th').onclick = () => { $('tut').classList.toggle('mini'); tutRender(); };
+$('tutSkip').onclick = () => { G.tut.on = false; tutRender(); addLog('📘 チュートリアルをやめました。「？」からいつでも再開できます'); };
+$('tutAgain').onclick = () => {
+  if (!G.tut) return;
+  if (G.tut.step >= TUT.length) G.tut.step = 0;
+  G.tut.on = true; $('help').style.display = 'none'; tutRender();
+};
+
+// =====================================================
+// 動物図鑑
+// =====================================================
+const zukanPort = [];
+function openZukan() {
+  const grid = $('zgrid');
+  if (!zukanPort.length) {
+    for (const key in SP) {
+      const sp = SP[key];
+      // その動物の「ふつうの値」の1匹として計算する
+      const typ = { sp: key, traits: [], st: { str: sp.base[0], spd: sp.base[1], dex: sp.base[2], hp: sp.base[3], app: sp.base[4] } };
+      const hunts = Object.keys(SP).filter(k => isPreyOf({ sp: key }, { sp: k })).map(k => SP[k].n);
+      const huntedBy = Object.keys(SP).filter(k => isPreyOf({ sp: k }, { sp: key })).map(k => SP[k].n);
+      let rel = '';
+      if (hunts.length) rel += `<div><b>⚠ おなかがすくとねらう相手：</b>${hunts.join('・')}</div>`;
+      if (huntedBy.length) rel += `<div><b>⚠ ねらわれる相手：</b>${huntedBy.join('・')}</div>`;
+      if (!rel) rel = '<div><i>だれもねらわず、だれにもねらわれない</i></div>';
+      const extra = [`🌡 快適 ${sp.comfort[0]}〜${sp.comfort[1]}℃`, sp.hibernate ? '💤 冬は眠くなる' : '', sp.swim ? '🌊 泳げる' : '', sp.alarm ? '👂 カニに気づく' : '', sp.armor ? '🛡 ダメージ半分' : '', sp.spiky ? '🦔 トゲ' : '', sp.liked ? '💕 みんなに好かれる' : '', sp.wool ? '☁ よく眠れる' : ''].filter(Boolean);
+      const d = document.createElement('div'); d.className = 'zcard';
+      d.innerHTML = `<canvas width="400" height="260"></canvas>
+        <div class="top"><span class="pn">${sp.n}</span><span class="diet ${sp.diet}">${DIET_N[sp.diet]}</span></div>
+        <div class="chips"><span class="chip">体の大きさ：${SIZE_N[sp.size]}</span>${extra.map(x => `<span class="chip">${x}</span>`).join('')}</div>
+        <div class="sec">ふつうの能力</div>${statsHTML(typ)}
+        <div class="sec">仕事の向き不向き</div><div class="jobs">${jobsHTML(typ)}</div>
+        <div class="spx">🐾 ${sp.sp}</div>
+        <div class="zrel">${rel}</div>`;
+      grid.appendChild(d);
+      zukanPort.push({ key, look: sp.look, c: d.querySelector('canvas'), phase: Math.random() * 6 });
+    }
+  }
+  $('zukan').style.display = 'block';
+  if (state === 'play') { G.zukanPaused = G.speed; document.querySelector('#speed button[data-s="0"]').click(); }
+}
+function closeZukan() {
+  $('zukan').style.display = 'none';
+  if (state === 'play' && G.zukanPaused) { const b = document.querySelector(`#speed button[data-s="${G.zukanPaused}"]`); if (b) b.click(); G.zukanPaused = 0; }
+}
+function drawZukan(t) {
+  for (const p of zukanPort) {
+    const g = p.c.getContext('2d');
+    g.setTransform(2, 0, 0, 2, 0, 0);
+    g.fillStyle = '#e3f4fa'; g.fillRect(0, 0, 200, 130);
+    blob(g, 100, 114, 90, 22, 1.3, .05); g.fillStyle = '#bfe39b'; g.fill();
+    g.strokeStyle = '#93c46d'; g.lineWidth = 2.5; g.stroke();
+    drawAnimal(g, p.look, 100, 112, 2.3 * SIZE_SCALE[SP[p.key].size] / 1.05, t, { phase: p.phase });
+  }
+}
+$('zBtn').onclick = openZukan;
+$('zBtn2').onclick = openZukan;
+$('zClose').onclick = closeZukan;
+
+// =====================================================
+// スタート画面
+// =====================================================
+let members = [];
+const startPort = [];
+// 最初の2匹は「ねらう・ねらわれる」関係にならない組み合わせにする
+const clash = (a, b) => isPreyOf({ sp: a }, { sp: b }) || isPreyOf({ sp: b }, { sp: a });
+function rollAll() {
+  const keys = Object.keys(SP);
+  let a, b, guard = 0;
+  do { a = pick(keys); b = pick(keys); } while ((a === b || clash(a, b)) && ++guard < 300);
+  const used = new Set();
+  members = [makeAnimal(a, used), makeAnimal(b, used)];
+  renderStart();
+}
+function rollOne(idx, same) {
+  const used = new Set(members.filter((_, i) => i !== idx).map(m => m.name));
+  let key = members[idx].sp;
+  if (!same) {
+    const others = members.filter((_, i) => i !== idx).map(m => m.sp);
+    const free = Object.keys(SP).filter(k => k !== key && !others.includes(k) && !others.some(o => clash(k, o)));
+    key = pick(free);
+  }
+  members[idx] = makeAnimal(key, used);
+  renderStart();
+}
+function renderStart() {
+  const grid = $('sgrid'); grid.innerHTML = ''; startPort.length = 0;
+  members.forEach((a, idx) => {
+    const sp = SP[a.sp];
+    const d = document.createElement('div'); d.className = 'scard';
+    d.innerHTML = `<canvas width="400" height="260"></canvas>
+      <div class="top"><span class="pn">${a.name}</span><span class="diet ${sp.diet}">${sp.n}・${DIET_N[sp.diet]}</span></div>
+      <div class="chips">${traitsHTML(a)}</div>
+      <div class="sec">能力</div>${statsHTML(a)}
+      <div class="sec">仕事の向き不向き</div><div class="jobs">${jobsHTML(a)}</div>
+      <div class="spx">🐾 ${sp.sp}</div>
+      <div class="rolls"><button class="btn" data-same="1">🔁 同じ動物で引き直す</button><button class="btn" data-same="0">🎲 別の動物にする</button></div>`;
+    d.querySelectorAll('.rolls button').forEach(b => b.onclick = () => rollOne(idx, b.dataset.same === '1'));
+    grid.appendChild(d);
+    startPort.push({ a, c: d.querySelector('canvas') });
+  });
+}
+function drawStart(t) {
+  for (const p of startPort) {
+    const g = p.c.getContext('2d');
+    g.setTransform(2, 0, 0, 2, 0, 0);
+    g.fillStyle = '#e3f4fa'; g.fillRect(0, 0, 200, 130);
+    blob(g, 100, 114, 90, 22, 1.3, .05); g.fillStyle = '#bfe39b'; g.fill();
+    g.strokeStyle = '#93c46d'; g.lineWidth = 2.5; g.stroke();
+    drawAnimal(g, p.a.look, 100, 112, 2.3 * SIZE_SCALE[SP[p.a.sp].size] / 1.05, t, { phase: p.a.phase, walk: false });
+  }
+}
+$('rerollAll').onclick = rollAll;
+$('goBtn').onclick = () => {
+  if (loadSave() && !confirm('前のセーブデータは、新しい島のデータで上書きされます。\n新しい島ではじめてよろしいですか？')) return;
+  startGame();
+  saveGame(false);
+};
+
+// =====================================================
+// セーブ・ロード（ブラウザの中に保存）
+// =====================================================
+const SAVE_KEY = 'doubutsu-island-save-v1';
+const OBJ_K = ['tree', 'palm', 'bush', 'rock'];
+function rle(arr) {   // 0/1 の並びを短く書く
+  const s = []; let cur = arr[0], n = 0;
+  for (let i = 0; i < arr.length; i++) { if (arr[i] === cur) n++; else { s.push(cur + ':' + n); cur = arr[i]; n = 1; } }
+  s.push(cur + ':' + n); return s.join(',');
+}
+function unrle(str, out) {
+  let i = 0;
+  for (const part of str.split(',')) { const [v, n] = part.split(':').map(Number); out.fill(v, i, i + n); i += n; }
+}
+function saveGame(manual) {
+  if (state !== 'play' || G.over || G.noSave) return false;
+  try {
+    const objs = [];
+    for (let i = 0; i < MW * MH; i++) { const o = obj[i]; if (o) objs.push(i, OBJ_K.indexOf(o.k), o.k === 'bush' ? o.berries : o.k === 'rock' ? o.amt : 0); }
+    const animals = G.animals.map(a => ({
+      id: a.id, sp: a.sp, name: a.name, traits: a.traits.map(t => t.n), st: a.st, look: a.look, phase: a.phase, ox: a.ox, oy: a.oy,
+      x: a.inHouse ? a.outX : a.x, y: a.inHouse ? a.outY : a.y, hunger: a.hunger, energy: a.energy, hp: a.hp, maxHp: a.maxHp,
+      job: a.job, carry: a.carry, dead: a.dead, spot: a.spot, cold: a.cold || 0, heat: a.heat || 0, home: a.home ? a.home.idx : -1,
+    }));
+    const builds = [...G.builds.values()].map(b => ({ type: b.type, idx: b.idx, done: b.done, prog: b.prog, need: b.need, hp: b.hp, maxHp: b.maxHp, no: b.no }));
+    const data = {
+      v: 1, savedAt: Date.now(), seed: G.seed, objs, explored: rle(explored), builds, animals, nextId,
+      g: { day: G.day, time: G.time, stock: G.stock, rel: [...G.rel.entries()], graves: G.graves, cx: G.cx, cy: G.cy, raidDay: G.raidDay, morningDay: G.morningDay,
+           houseNo: G.houseNo, season: G.season, weather: G.weather, landTotal: G.landTotal, landExplored: G.landExplored,
+           nextArrival: G.nextArrival, tut: G.tut },
+      cam: { x: cam.x, y: cam.y, z: cam.z },
+    };
+    localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+    if (manual) addLog('💾 セーブしました', 'good');
+    return true;
+  } catch (e) {
+    addLog('⚠ セーブできませんでした（' + e.message + '）', 'bad');
+    return false;
+  }
+}
+function loadSave() { try { return JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); } catch (e) { return null; } }
+function loadGame(data) {
+  genMap(data.seed);
+  G.seed = data.seed;
+  obj.fill(null);
+  for (let k = 0; k < data.objs.length; k += 3) {
+    const i = data.objs[k], kk = OBJ_K[data.objs[k + 1]], n = data.objs[k + 2];
+    obj[i] = kk === 'bush' ? { k: kk, berries: n } : kk === 'rock' ? { k: kk, amt: n } : { k: kk };
+  }
+  unrle(data.explored, explored);
+  Object.assign(G, data.g);
+  G.rel = new Map(data.g.rel); G.crabs = []; G.fx = []; G.alarm = false; G.over = false; G.selected = null;
+  G.builds = new Map(); bld.fill(0);
+  for (const b of data.builds) { G.builds.set(b.idx, { ...b, sleepers: [] }); if (b.done) bld[b.idx] = BINFO[b.type].code; }
+  G.animals = data.animals.map(s => {
+    const a = makeAnimal(s.sp, new Set());
+    Object.assign(a, {
+      id: s.id, name: s.name, traits: s.traits.map(n => TRAITS.find(t => t.n === n)).filter(Boolean), st: s.st, look: s.look, phase: s.phase,
+      ox: s.ox, oy: s.oy, x: s.x, y: s.y, hunger: s.hunger, energy: s.energy, hp: s.hp, maxHp: s.maxHp, job: s.job, carry: s.carry,
+      dead: s.dead, spot: s.spot, cold: s.cold, heat: s.heat, idle: rand(.3, 1),
+    });
+    if (s.home >= 0 && !a.dead) { const h = G.builds.get(s.home); if (h) { a.home = h; h.sleepers.push(a.id); } }
+    return a;
+  });
+  nextId = data.nextId;
+  bushes = []; for (let i = 0; i < MW * MH; i++) if (obj[i] && obj[i].k === 'bush') bushes.push(i);
+  fogCtx.fillStyle = FOG; fogCtx.fillRect(0, 0, MW, MH);
+  for (let i = 0; i < MW * MH; i++) if (explored[i]) fogCtx.clearRect(i % MW, Math.floor(i / MW), 1, 1);
+  buildMini();
+  chunkCache.clear();
+  cam.x = data.cam.x; cam.y = data.cam.y; cam.z = data.cam.z;
+  $('start').style.display = 'none';
+  state = 'play';
+  buildTeam();
+  addLog('📂 続きから再開しました。おかえりなさい！', 'good');
+  if (!G.tut) G.tut = { on: false, step: 0 };
+  if (!G.nextArrival) G.nextArrival = G.day + 1;
+  tutRender();
+}
+function showContinue() {
+  const d = loadSave();
+  if (!d) return;
+  const df = (d.g.day - 1) + d.g.time;
+  const s = SEASONS[Math.floor(df / SEASON_LEN) % 4];
+  const yr = Math.floor(df / (SEASON_LEN * 4)) + 1, sd = Math.floor(df) % SEASON_LEN + 1;
+  const live = d.animals.filter(a => !a.dead).map(a => `${a.name}（${SP[a.sp].n}）`);
+  const when = new Date(d.savedAt);
+  $('contInfo').innerHTML = `<b>${yr}年目 ${s.icon}${s.n} ${sd}日目</b>（島に来て${d.g.day}日目）<br>生きている動物：${live.length ? live.join('・') : 'なし'}<br><span style="color:#7a6656">保存した日時：${when.toLocaleString('ja-JP')}</span>`;
+  $('contBox').style.display = 'flex';
+  $('contBtn').onclick = () => loadGame(d);
+}
+$('saveBtn').onclick = () => saveGame(true);
+setInterval(() => saveGame(false), 60000);              // 1分ごとに自動セーブ
+addEventListener('beforeunload', () => saveGame(false));  // 閉じるときもセーブ
+document.addEventListener('visibilitychange', () => { if (document.hidden) saveGame(false); });   // スマホで別のアプリに切りかえたときもセーブ
+
+function startGame() {
+  // 島をつくる（広い島ができるまで作り直す）
+  let seed = Math.floor(Math.random() * 100000), camp = null;
+  for (let tries = 0; tries < 20; tries++) {
+    genMap(seed);
+    camp = findCamp();
+    if (camp) {
+      let n = 0;
+      bfs(camp[0], camp[1], landWalk, () => { n++; return false; }, 1e9);
+      if (n > 11000) break;
+    }
+    seed += 17;
+  }
+  G.seed = seed;
+  G.cx = camp[0]; G.cy = camp[1];
+  for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) obj[(G.cy + dy) * MW + G.cx + dx] = null;
+  G.landTotal = 0; for (let i = 0; i < MW * MH; i++) if (ter[i] >= 2) G.landTotal++;
+  bushes = []; for (let i = 0; i < MW * MH; i++) if (obj[i] && obj[i].k === 'bush') bushes.push(i);
+  fogCtx.fillStyle = FOG; fogCtx.fillRect(0, 0, MW, MH);
+  explored.fill(0);
+  G.animals = members;
+  const spots = [[-2, 1], [2, 1], [-2, -1], [2, -1], [0, 2], [-1, 2], [1, 2], [-3, 0], [3, 0]];
+  G.animals.forEach((a, i) => {
+    a.spot = spots[i % spots.length];
+    a.x = (G.cx + a.spot[0] + .5) * T; a.y = (G.cy + a.spot[1] + .5) * T;
+    a.idle = rand(.5, 2);
+  });
+  for (let i = 0; i < G.animals.length; i++) for (let j = i + 1; j < G.animals.length; j++) initRel(G.animals[i], G.animals[j]);
+  reveal(G.cx, G.cy, 12);
+  buildMini();
+  chunkCache.clear();
+  cam.x = (G.cx + .5) * T; cam.y = (G.cy + .5) * T; cam.z = 1;
+  $('start').style.display = 'none';
+  state = 'play';
+  buildTeam();
+  addLog('⛵ 動物たちが島に流れついた！ まずは食べ物と木を集めよう', 'good');
+  const hs = G.animals.filter(a => SP[a.sp].hunts), ps = G.animals.filter(p => hs.some(h => isPreyOf(h, p)));
+  if (hs.length && ps.length) addLog(`⚠ ${hs[0].name}（${SP[hs[0].sp].n}）と${ps[0].name}（${SP[ps[0].sp].n}）は相性が悪いみたい…`, 'bad');
+  G.nextArrival = 2;
+  G.tut = { on: $('tutOn').checked, step: 0 };
+  tutRender();
+}
+
+// =====================================================
+// ループ
+// =====================================================
+let last = performance.now(), uiT = 0;
+function frame(now) {
+  const dt = Math.min(.1, (now - last) / 1000); last = now;
+  const t = now / 1000;
+  if (state === 'start') drawStart(t);
+  if ($('zukan').style.display === 'block') drawZukan(t);
+  if (state === 'play' && !G.over) for (let i = 0; i < G.speed; i++) update(dt);
+  render(t);
+  if (state === 'play') {
+    uiT -= dt;
+    if (uiT <= 0) { uiT = .25; updateHUD(); updateAlerts(); refreshPanel(); tutCheck(); }
+    drawTeam(t);
+    if (G.selected && !G.selected.dead) {
+      pctx.setTransform(2, 0, 0, 2, 0, 0); pctx.clearRect(0, 0, 90, 74);
+      drawAnimal(pctx, G.selected.look, 45, 68, 1.5 * SIZE_SCALE[SP[G.selected.sp].size] / 1.05, t, { mood: moodOf(G.selected), phase: G.selected.phase, sleep: G.selected.sleeping });
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+const SAMPLE = 'あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをんがぎぐげござじずぜぞだぢづでどばびぶべぼぱぴぷぺぽゃゅょっアイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲンガギグゲゴザジズゼゾダヂヅデドバビブベボパピプペポャュョッー…！？0123456789';
+document.fonts.load(`bold 12px "Zen Maru Gothic"`, SAMPLE);
+
+rollAll();
+showContinue();
+if (params.get('cont') && loadSave()) $('contBtn').click();
+if (params.get('auto')) {
+  G.noSave = !params.get('savetest');   // 確認用の自動プレイでは、本物のセーブを上書きしない
+  if (params.get('notut')) $('tutOn').checked = false;
+  startGame();
+  G.autoAccept = !!params.get('accept');
+  if (params.get('build')) {   // 確認用：キャンプを柵で囲み、家を2軒置く
+    G.stock.wood = 400; G.stock.stone = 60;
+    const r = 7;
+    for (let d = -r; d <= r; d++) for (const [x, y] of [[G.cx + d, G.cy - r], [G.cx + d, G.cy + r], [G.cx - r, G.cy + d], [G.cx + r, G.cy + d]]) {
+      const i = y * MW + x; obj[i] = null; objChanged(i);
+      placeBuild(d === 0 ? 'gate' : 'fence', i, true);
+    }
+    for (const [dx, dy] of [[-5, -4], [5, -4]]) { const i = (G.cy + dy) * MW + G.cx + dx; obj[i] = null; objChanged(i); placeBuild('house', i, true); }
+  }
+  if (params.get('season')) { G.day = 1 + SEASON_LEN * +params.get('season'); G.morningDay = G.day; }
+  if (params.get('weather')) G.weather = params.get('weather');
+  const sim = +params.get('sim') || 0;
+  for (let k = 0; k < sim * 10; k++) update(.1);
+  if (params.get('speed')) G.speed = +params.get('speed');
+  if (params.get('zoom')) cam.z = +params.get('zoom');
+  if (params.get('sel')) select(G.animals[0]);
+  if (params.get('dump')) { const el = document.getElementById('err'); el.style.display = 'block'; el.textContent = G.animals.map(a => [a.name, a.sp, 'h' + Math.round(a.hunger), 'hp' + Math.round(a.hp), 'task:' + a.task, 'path:' + (a.path ? a.path.length : '-'), 'act:' + (a.act ? a.act.n : '-'), 'sl:' + a.sleeping, 'idle:' + a.idle.toFixed(1), 'tile:' + ter[tileOf(a)[1] * MW + tileOf(a)[0]], 'd:' + Math.round(dist(a, campPos()) / T), 'job:' + a.job, 'fight:' + !!a.fight, 'flee:' + !!a.fleeFrom, 'c' + Math.round(a.cold || 0), 'ht' + Math.round(a.heat || 0), 'felt' + Math.round(a.felt ?? 0), 'house:' + (a.inHouse ? a.inHouse.no : '-'), 'home:' + (a.home ? a.home.no : '-')].join(' ')).join('\n') + '\nstock ' + JSON.stringify(G.stock) + ' day ' + G.day + ' h ' + hour().toFixed(1) + ' season ' + seasonIdx() + ' ' + G.weather + ' ' + Math.round(G.temp) + 'C starves ' + (G.starves || 0) + ' dead ' + G.animals.filter(a => a.dead).length + ' ' + (G.causes || []).join(', ') + '\n' + (G.sinfo || []).join('\n'); }
+  if (params.get('reveal')) { reveal(G.cx, G.cy, 400); cam.z = .35; }
+  if (params.get('zukan')) openZukan();
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
