@@ -342,6 +342,7 @@
   <b>食べ物</b>：草食は木の実、肉食は魚、雑食はどちらでも。肉食の仲間の魚を切らさないように！<br>
   <b>なかよし度</b>：近くで過ごすと上がります。おなかをすかせた肉食動物は、仲の悪い小さな草食動物を追いかけることがあります。警告が出たら「魚をあげる」で止められます。<br>
   <b>夜の大ガニ</b>：2日目の夜から、浜辺に大ガニが上陸してきます。戦いに強い動物が迎えうちます。<br>
+  <b>💰 島の豊かさ</b>：持っている物・建てた物・仲間の数で決まります（画面上の💰）。<b>豊かになるほど、大ガニ・野生の群れ・ヘビが強く、多くなります</b>。日にちがたつだけでは強くなりません。<br>
   <b>ごきげん</b>：おなか・寒さ・家・仲よし・おいしい料理などで上がり下がりします。ごきげんだと仕事が速く、不機嫌が続くとサボる・ケンカする・家出することも。<br>
   <b>赤ちゃん</b>：同じ種類で大の仲よし（なかよし度80以上）の2匹に、赤ちゃんが生まれることがあります。親の能力を受けつぎ、3日で大人になります。<br>
   <b>ケガと病気</b>：ケガや「かぜ」をすると仕事がおそくなります。薬草を集めておくと「看病」担当が手当てしてくれます。<br>
@@ -1758,6 +1759,7 @@ function cookStep(a) {
 
 // ---------- 1時間ごと（食べ物がいたむ・嵐・建物の修理） ----------
 function hourly() {
+  calcWealth();
   const s = seasonIdx();
   const rate = [.003, .008, .003, 0][s];
   for (const k of ['berry', 'fish', 'veg']) {
@@ -1939,8 +1941,9 @@ function herdRaid() {
   const size = SP[h.sp].size;
   for (let k = 0; k < n; k++) {
     const m = h.m[k] || h.m[0];
-    const hp = 25 + size * 12;
-    G.crabs.push({ kind: 'wild', wsp: h.sp, look: m.look, x: m.x, y: m.y, hp, maxHp: hp, dmg: 3 + size * 2, sp: (1 + SP[h.sp].base[1] * .12) * T, cd: 0, path: null, repath: 0, phase: Math.random() * 6, flip: false });
+    const mul = Math.max(.6, Math.min(1.4, .6 + threatLv() * .05));   // 島の豊かさで強さが変わる
+    const hp = Math.round((25 + size * 12) * mul);
+    G.crabs.push({ kind: 'wild', wsp: h.sp, look: m.look, x: m.x, y: m.y, hp, maxHp: hp, dmg: (3 + size * 2) * mul, sp: (1 + SP[h.sp].base[1] * .12) * T, cd: 0, path: null, repath: 0, phase: Math.random() * 6, flip: false });
   }
   addLog(`⚠ 夜の暗やみから、${SP[h.sp].n}の群れがおそってきた！`, 'bad');
   bigToast(`⚠ ${SP[h.sp].n}の群れがおそってきた！`, '戦える動物が迎えうちます');
@@ -2371,8 +2374,8 @@ function updateSnakes(dt) {
         s.cd -= dt;
         if (s.cd <= 0) {
           s.cd = 1.5; const v = s.tgt;
-          damage(v, 6, 'ヘビにかまれた');
-          if (!v.dead && !v.poison && Math.random() < .35) { v.poison = dayF() + .3; addLog(`☠ ${v.name}がヘビの毒にやられた！（薬草で看病すると治ります）`, 'bad'); diary(v, 'ヘビにかまれて毒にやられた'); }
+          damage(v, Math.round(Math.min(8, 4 + threatLv() * .25)), 'ヘビにかまれた');
+          if (!v.dead && !v.poison && Math.random() < .25) { v.poison = dayF() + .3; addLog(`☠ ${v.name}がヘビの毒にやられた！（薬草で看病すると治ります）`, 'bad'); diary(v, 'ヘビにかまれて毒にやられた'); }
         }
       }
       continue;
@@ -2546,20 +2549,33 @@ function crabHitBuild(c, i, dt) {
   fx((i % MW + .5) * T, (Math.floor(i / MW) + .3) * T, 'ガリッ', '#8a5a3b');
   if (b.hp <= 0) destroyBuild(i, '大ガニ');
 }
+// ---------- 島の豊かさ（資産）：敵の強さはこれで決まる ----------
+function calcWealth() {
+  const s = G.stock;
+  let w = (s.wood || 0) + (s.stone || 0) * 1.5 + (s.berry || 0) + (s.fish || 0) + (s.veg || 0) + (s.meal || 0) * 2 + (s.herb || 0) * 2;
+  for (const b of G.builds.values()) if (b.done) { const k = BINFO[b.type].cost; w += (k.wood || 0) + (k.stone || 0) * 1.5; }
+  let rf = 0; for (let i = 0; i < roof.length; i++) if (roof[i]) rf++;
+  w += rf + alive().length * 30;
+  G.wealth = Math.round(w);
+  return G.wealth;
+}
+// 強さのレベル（100ごとに1）
+const threatLv = () => (G.wealth == null ? calcWealth() : G.wealth) / 100;
 function spawnRaid() {
-  // 仲間が少ないうちはカニも少なめ（2〜3匹なら1匹、4匹なら2匹…）
-  let n = Math.min(7, 1 + Math.floor(G.day / 3) + (Math.random() < .4 ? 1 : 0), Math.max(1, Math.floor(alive().length * .6)));
+  const L = calcWealth() / 100;
+  // 島が豊かになるほど、数も強さも上がる（仲間が少ないうちは数をおさえる）
+  let n = Math.min(7, 1 + Math.floor(L / 4) + (Math.random() < .3 ? 1 : 0), Math.max(1, Math.floor(alive().length * .6)));
   n = Math.max(1, Math.round(n * (G.raidMul || 1)));   // 王さまをたおすと半分
   const cands = [];
   bfs(G.cx, G.cy, landWalk, (x, y, i, d) => { if (d >= 16 && ter[i] === 2) cands.push(i); return false; }, 1e9, 36);
   if (!cands.length) return;
   const i0 = pick(cands);
   for (let k = 0; k < n; k++) {
-    const hp = 20 + G.day * 3;
-    G.crabs.push({ x: (i0 % MW + .5) * T + rand(-20, 20), y: (Math.floor(i0 / MW) + .5) * T + rand(-20, 20), hp, maxHp: hp, dmg: 4 + G.day * .6, sp: 1.4 * T, cd: 0, path: null, repath: 0, phase: Math.random() * 6, flip: false });
+    const hp = Math.round(Math.min(110, 16 + L * 3));
+    G.crabs.push({ x: (i0 % MW + .5) * T + rand(-20, 20), y: (Math.floor(i0 / MW) + .5) * T + rand(-20, 20), hp, maxHp: hp, dmg: Math.min(14, 3 + L * .45), sp: 1.4 * T, cd: 0, path: null, repath: 0, phase: Math.random() * 6, flip: false });
   }
   addLog(`🦀 大ガニが${n}匹、浜に上陸した！`, 'bad');
-  bigToast(`🦀 大ガニが${n}匹やってきた！`, '弱い子は家やキャンプへ、強い子が迎えうちます');
+  bigToast(`🦀 大ガニが${n}匹やってきた！`, `島の豊かさ💰${G.wealth}に合わせた強さです`);
   raidAlert(`🦀 大ガニが${n}匹上陸しています！`);
   const ear = alive().find(a => SP[a.sp].alarm);
   if (ear) { G.alarm = true; addLog(`👂 ${ear.name}が物音に気づいて、みんなを起こした！`); }
@@ -2808,7 +2824,7 @@ function update(dt) {
   if (hh !== G.lastHour) { G.lastHour = hh; hourly(); }
   for (const b of G.builds.values()) if (b.type === 'farm' && b.done && s !== 3) b.grow = Math.min(1, (b.grow || 0) + dt / (DAY * 1.6) * (s === 0 ? 1.2 : 1));
   G.temp = airTemp();
-  if (G.raidDay !== G.day && G.day >= 2 && h >= 21) { G.raidDay = G.day; if (Math.random() < Math.min(.9, .55 + G.day * .04) * SEASONS[s].raid) spawnRaid(); }
+  if (G.raidDay !== G.day && G.day >= 2 && h >= 21) { G.raidDay = G.day; if (Math.random() < Math.min(.85, .4 + threatLv() * .04) * SEASONS[s].raid) spawnRaid(); }
   if (G.herdRaidDay !== G.day && G.day >= 2 && h >= 21.5) {
     G.herdRaidDay = G.day;
     const hd = G.herd;
@@ -3696,7 +3712,7 @@ function updateHUD() {
   const icon = isNight() ? '🌙' : h < 7 ? '🌅' : h >= 18 ? '🌇' : '☀';
   const ex = Math.round(G.landExplored / Math.max(1, G.landTotal) * 100);
   const S = SEASONS[seasonIdx()];
-  $('clock').innerHTML = `<div class="c1">${yearN()}年目　${S.icon}${S.n} ${seasonDay()}日目　${icon} ${hh}:${String(mm).padStart(2, '0')}</div><div class="c2">${WEATHER[G.weather].icon} ${G.weather} ${Math.round(G.temp)}℃　🧭 探検 ${ex}%　🐾 ${alive().length}匹　🔍 発見 ${G.found || 0}/${G.poiTotal || 0}</div>`;
+  $('clock').innerHTML = `<div class="c1">${yearN()}年目　${S.icon}${S.n} ${seasonDay()}日目　${icon} ${hh}:${String(mm).padStart(2, '0')}</div><div class="c2">${WEATHER[G.weather].icon} ${G.weather} ${Math.round(G.temp)}℃　🧭 探検 ${ex}%　🐾 ${alive().length}匹　🔍 発見 ${G.found || 0}/${G.poiTotal || 0}　<span title="島の豊かさ（多いほど敵が強くなる）">💰 ${G.wealth == null ? calcWealth() : G.wealth}</span></div>`;
   const s = G.stock, list = alive();
   for (const [k] of RES_LIST) { const el = $('res_' + k); if (el) el.lastChild.textContent = s[k] || 0; }
   // 食べ物が足りなくなりそうなときは赤く光らせる
@@ -3974,7 +3990,7 @@ const TUT = [
   { t: 'たき火を建てよう', x: () => '右下の「<b>🔨 建てる</b>」→「<b>🔥 くらし</b>」→「<b>🔥 たき火</b>」を選んで、キャンプの近く（緑の四角が出る場所）をタップします。置くと「建築」担当の動物が建てに行きます。たき火のまわりは暖かくなります。木や岩がじゃまなときは、タップして「<b>🪓 切る予約</b>」をすると片づけてくれます（木の上に置くと、自動で切ってから建てます）。', ok: () => countB('fire') >= 1, hl: 'bOpen', reward: () => { G.stock.wood += 5; return '🪵 木 +5'; } },
   { t: '石を10こ集めよう', x: () => '家や見張り台を建てるには石が必要です。だれかの<b>仕事の優先度</b>で「<b>⛏ 石集め</b>」を<b>1</b>にすると早く集まります（岩場や石のある場所へ行きます）。', p: () => `🪨 石 ${Math.min(10, G.stock.stone)} / 10`, ok: () => G.stock.stone >= 10 },
   { t: '家を建てよう', x: () => '「🔨 建てる」→「<b>🏠 住まい</b>」→「<b>🏠 家</b>」（木25・石10）。家は2匹まで中で眠れて、<b>カニにおそわれず</b>、冬は暖かく夏は涼しい場所です。', p: () => G.stock.wood < 25 || G.stock.stone < 10 ? `材料：🪵 ${G.stock.wood}/25　🪨 ${G.stock.stone}/10` : '材料はそろっています！', ok: () => countB('house') >= 1, hl: 'bOpen', reward: () => { G.stock.fish += 5; return '🐟 魚 +5'; } },
-  { t: 'はじめての夜をこえよう', x: () => '夜はみんな焚き火のそばや家・ベッドで眠ります。<b>2日目の夜からは、浜辺に大ガニが上陸</b>してきます。戦いに強い動物が迎えうちます。襲来のお知らせの「<b>⚔ みんなで戦う</b>」「<b>🏠 みんな避難</b>」で指示も出せます。', p: () => `${G.day}日目`, ok: () => G.day >= 2 && hour() >= 6 },
+  { t: 'はじめての夜をこえよう', x: () => '夜はみんな焚き火のそばや家・ベッドで眠ります。<b>2日目の夜からは、浜辺に大ガニが上陸</b>してきます。戦いに強い動物が迎えうちます。敵の強さは画面上の「<b>💰 島の豊かさ</b>」で決まり、物や建物がふえるほど強くなります。襲来のお知らせの「<b>⚔ みんなで戦う</b>」「<b>🏠 みんな避難</b>」で指示も出せます。', p: () => `${G.day}日目`, ok: () => G.day >= 2 && hour() >= 6 },
   { t: '新しい仲間をむかえよう', x: () => 'ときどき<b>浜辺に動物が流れつきます</b>。お知らせの「🐾 仲間にする」で仲間になります。肉食の動物は、おなかがすくと小さな草食動物をねらうことがあるので、<b>相性の注意</b>も見て選びましょう。', p: () => `仲間 ${alive().length}匹（3匹になったらクリア）`, ok: () => alive().length >= 3, reward: () => { G.stock.berry += 5; G.stock.fish += 5; return '🫐 +5　🐟 +5'; } },
   { t: '「？」を調べよう', x: () => '島のあちこちに<b>「？」マーク</b>が隠れています。探検していると見つかって、動物が調べに行きます。だれかの<b>仕事の優先度</b>で「<b>🧭 探検</b>」を<b>1</b>にすると早く見つかります。はちみつ・地図・化石など、いろいろなものが出てきます。探検の途中で<b>🐍 ヘビ</b>に会うことも。毒にやられたら、薬草で看病してあげてください。', p: () => `🔍 発見 ${Math.min(1, G.found || 0)} / 1`, ok: () => (G.found || 0) >= 1, hl: 'pprio' },
   { t: '柵と門でキャンプを囲もう', x: () => '「🔨 建てる」→「<b>🛡 守り</b>」→「<b>🪵 柵</b>」は、なぞるように<b>ドラッグ</b>すると並べて置けます。柵はカニも動物も通れないので、出入り口に「<b>🚪 門</b>」をつけましょう（仲間だけ通れます）。<b>🪤 トゲの罠</b>や<b>🗼 見張り台</b>も、大ガニ対策に役立ちます。', p: () => `柵 ${Math.min(10, countB('fence'))} / 10　門 ${Math.min(1, countB('gate'))} / 1`, ok: () => countB('fence') >= 10 && countB('gate') >= 1, hl: 'bOpen' },
