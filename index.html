@@ -185,8 +185,15 @@
   .prio { display: grid; grid-template-columns: 1fr; gap: 3px; }
   .prow { display: flex; align-items: center; justify-content: space-between; font-size: 12px; background: #f6f1e8; border-radius: 8px; padding: 2px 4px 2px 8px; }
   .prow .stars { font-size: 10px; }
+  .lv { display: inline-block; margin-left: 4px; font-size: 10px; font-weight: 700; color: #fff; background: #43a047; border-radius: 6px; padding: 0 4px; }
   button.pr { width: 30px; height: 24px; border-radius: 8px; border: 2px solid #5b4636; font-weight: 700; font-size: 13px; padding: 0; color: #3b2f25; }
   .pr.p1 { background: #ff8a65; color: #fff; } .pr.p2 { background: #ffb74d; } .pr.p3 { background: #fff3c4; } .pr.p4 { background: #eeeeee; color: #7a6656; } .pr.p0 { background: #fff; color: #bbb; border-color: #ccc; }
+  #tradeBox { position: fixed; inset: 0; background: rgba(40,30,20,.55); display: none; align-items: center; justify-content: center; z-index: 20; }
+  #tradeBox .box { background: #fff; border: 3px solid #5b4636; border-radius: 18px; padding: 14px 16px; width: 440px; max-width: 94vw; max-height: 88vh; overflow: auto; }
+  #tradeBox h2 { font-family: 'Zen Maru Gothic', sans-serif; margin: 0 0 4px; }
+  #draftBar { position: fixed; left: 50%; transform: translateX(-50%); bottom: 96px; z-index: 12; display: none; flex-wrap: wrap; align-items: center; justify-content: center; gap: 2px 4px; background: rgba(255,255,255,.95); border: 3px solid #e53935; border-radius: 14px; padding: 5px 10px 7px; font-size: 12.5px; width: 380px; max-width: 94vw; box-sizing: border-box; box-shadow: 0 3px 0 rgba(91,70,54,.25); }
+  #draftBar span { width: 100%; text-align: center; }
+  @media (max-width: 760px) { body.drafting #panel { display: none !important; } }
   #craftBox { position: fixed; inset: 0; background: rgba(40,30,20,.55); display: none; align-items: center; justify-content: center; z-index: 20; }
   #craftBox .box { background: #fff; border: 3px solid #5b4636; border-radius: 18px; padding: 14px 16px; width: 440px; max-width: 94vw; max-height: 88vh; overflow: auto; }
   #craftBox h2 { font-family: 'Zen Maru Gothic', sans-serif; margin: 0 0 4px; }
@@ -308,7 +315,7 @@
     <div class="sec">😊 ごきげん</div><div id="pmood"></div>
     <div class="sec">📋 仕事の優先度 <small style="font-weight:400;color:#9a8877">（数字をタップ：1→2→3→4→✕）</small></div><div id="pprio" class="prio"></div>
     <div class="sec">寝る場所</div><select id="homeSel"></select>
-    <div class="pbtns"><button id="feedBtn">🍽 ごはんをあげる</button><button id="followBtn">🎥 ついていく</button></div>
+    <div class="pbtns"><button id="draftBtn">🎯 指示モード</button><button id="feedBtn">🍽 ごはんをあげる</button><button id="followBtn">🎥 ついていく</button></div>
   </div>
   <div class="pt" data-t="gear" hidden><div class="sec">🎒 装備 <small style="font-weight:400;color:#9a8877">（倉庫にある装備をつけかえられます）</small></div><div id="pgear"></div></div>
   <div class="pt" data-t="abil" hidden>
@@ -373,6 +380,9 @@
   <b>探検の発見</b>：島のあちこちに「？」が隠れています。探検担当が調べに行くと、はちみつ・地図・手紙・化石・石像などが見つかります。♨温泉の近くで休むと体が温まり、ケガも早く治ります。<br>
   <b>部屋づくり</b>：🧱壁（とドア）でまわりを囲んで、🟫屋根をかけると「部屋」になります。部屋の中は外より気温がおだやかで（冬は暖かく、夏は涼しい）、たき火を置くとさらに暖かくなります。動物たちは部屋の中で眠ったり、寒いとき・暑いときに避難したりします。部屋の気温は地図に「🌡18℃」と出ます。屋根だけで囲まれていない所は、しま模様で表示されます。<br>
   <b>木や岩を片づける</b>：木・岩・しげみをタップすると「🪓 切る予約」ができます。建てるメニューの「🪓 片づけ予約」ではなぞってまとめて予約できます。木の上に建物を置くと、自動で先に切ってから建てます。<br>
+  <b>🎯 指示モード</b>：動物の「ようす」タブの「🎯 指示モード」か、襲来のお知らせの「🎯 自分で指示」で、自分で動かせます。動物をタップしてから、地面をタップで移動、敵（大ガニ・ヘビ）をタップで攻撃。近くの敵には自分から反撃します。敵がいなくなると自動で終わります。<br>
+  <b>⬆ 成長</b>：仕事や戦いをするほど、その仕事が上手になります（Lv1〜10、1つ上がるごとに6%ずつ速く・強く）。<br>
+  <b>🛶 たぬきの行商人</b>：ときどき船でやってきて、夕方まで浜辺にいます。タップすると、木や食べ物をめずらしい装備・種・薬草と交換できます。<br>
   <b>🎒 装備</b>：「🔥 くらし」の<b>🛠 作業台</b>をタップ →「🎒 装備を作る」で、武器・よろい・道具・服・おしゃれを作れます。できた装備は向いている子が自動でつけます。動物の「装備」タブでつけかえもできます。探検・宝箱・洞くつ・カニの王さまから、めずらしい装備が見つかることも。<br>
   <b>野生のヘビ</b>：島のあちこちにヘビがうろうろしています。近づくとかみついてきて、☠毒にやられることも（薬草で看病すると治ります）。力の強い子はやっつけます。<br>
   <b>こわす・取り消す</b>：建物や屋根をタップすると「解体する／取り消す」が出ます。「🧹こわす」モードでは、なぞって連続でこわせます。<br>
@@ -391,6 +401,8 @@
   <div class="zgrid" id="zgrid"></div>
 </div>
 <div id="story"><div class="box"><h2 id="storyTitle"></h2><div id="storyText" style="font-size:13.5px;line-height:1.8"></div><div style="margin-top:12px"><button class="btn" id="storyClose">とじる</button></div></div></div>
+<div id="draftBar"></div>
+<div id="tradeBox"><div class="box"><h2>🛶 たぬきの行商人</h2><p class="pnote" id="tradeNote"></p><div id="tradeList"></div><div style="margin-top:10px"><button class="btn" id="tradeClose">とじる</button></div></div></div>
 <div id="craftBox"><div class="box"><h2>🎒 装備を作る</h2><p class="pnote" id="craftNote"></p><div id="craftList"></div><div class="crh">⏳ 作るのを待っている装備</div><div id="craftQ" style="padding:4px 0"></div><div class="crh">📦 倉庫にある装備</div><div id="craftStock" style="padding:4px 0"></div><div style="margin-top:10px"><button class="btn" id="craftClose">とじる</button></div></div></div>
 <div id="prioBox"><div class="box"><h2>📋 仕事の優先度</h2><p class="pnote">1がいちばん先にやる仕事、4はひまなときにやる仕事、✕はしない仕事です。数字をタップで切りかえ。★はその子の得意さです。</p><div style="overflow-x:auto"><table id="prioTbl"></table></div><div style="margin-top:10px"><button class="btn" id="prioClose">とじる</button></div></div></div>
 <div id="err"></div>
@@ -1777,7 +1789,7 @@ function cookStep(a) {
 
 // ---------- 1時間ごと（食べ物がいたむ・嵐・建物の修理） ----------
 function hourly() {
-  calcWealth();
+  calcWealth(); traderHourly();
   const s = seasonIdx();
   const rate = [.003, .008, .003, 0][s];
   for (const k of ['berry', 'fish', 'veg']) {
@@ -2225,9 +2237,10 @@ function updateTowers(dt) {
   }
 }
 function raidAlert(text) {
-  makeAlert('raid', '', `<span>${text}</span><span class="small">指示：⚔ 戦える子以外もみんなで戦う ／ 🏠 戦えない子は家・部屋・キャンプで休む</span>`, [
+  makeAlert('raid', '', `<span>${text}</span><span class="small">指示：⚔ 戦える子以外もみんなで戦う ／ 🏠 戦えない子は家・部屋・キャンプで休む ／ 🎯 動物をタップして自分で動かす</span>`, [
     button('⚔ みんなで戦う', () => setRaidOrder('fight')),
     button('🏠 みんな避難', () => setRaidOrder('hide')),
+    button('🎯 自分で指示', draftAllFighters),
     button('🤖 おまかせ', () => setRaidOrder(null)),
   ]);
 }
@@ -2423,7 +2436,7 @@ function snakeCheck(a, dt) {
       if (a.cd <= 0) {
         a.cd = 1;
         const dmg = Math.round((3 + eff(a, 'fight') * 6) * (1 + (G.fightBonus || 0)));
-        s.hp -= dmg; fx(s.x, s.y - 16, '-' + dmg, '#c0392b'); se('hit');
+        s.hp -= dmg; fx(s.x, s.y - 16, '-' + dmg, '#c0392b'); se('hit'); gainXp(a, 'fight', 1);
         if (s.hp <= 0) killSnake(s, a);
       }
     }
@@ -2498,7 +2511,7 @@ function gearMul(a, job) {
   }
   return m;
 }
-function eff(a, job) { return effBase(a, job) * gearMul(a, job); }
+function eff(a, job) { return effBase(a, job) * gearMul(a, job) * skillMul(a, job); }
 const gearArmor = a => { const g = a.gear && GEAR[a.gear.armor]; return g ? g.armor : 1; };
 const gearSpd = a => { const g = a.gear && GEAR[a.gear.tool]; return g && g.spd ? g.spd : 1; };
 function comfortOf(a) {
@@ -2691,6 +2704,216 @@ function benchO(g, x, y) {
   g.beginPath(); g.moveTo(x + 3, y - 10); g.lineTo(x + 14, y - 10); g.lineTo(x + 14, y - 14); g.closePath(); g.fillStyle = '#cfd6db'; g.fill(); g.stroke();
 }
 
+// ---------- 成長（仕事をするほど上手になる） ----------
+const XP_PER = { chop: 3, gather: 2, fish: 3, mine: 3, build: 1.2, cook: 2, doctor: 4, explore: 2 };
+const LV_XP = lv => 12 * lv * (lv + 1) / 2;   // Lv1:12 Lv2:36 Lv3:72 … Lv10:660
+const SKILL_N = { ...JOBS, fight: '戦い' };
+function lvOf(a, job) {
+  const x = (a.xp && a.xp[job]) || 0;
+  let lv = 0; while (lv < 10 && x >= LV_XP(lv + 1)) lv++;
+  return lv;
+}
+const skillMul = (a, job) => 1 + lvOf(a, job) * .06;
+function gainXp(a, job, n) {
+  if (!a || !a.st || a.dead || a.baby) return;
+  a.xp = a.xp || {};
+  const before = lvOf(a, job);
+  a.xp[job] = (a.xp[job] || 0) + n;
+  const after = lvOf(a, job);
+  if (after > before) {
+    addLog(`⬆ ${a.name}の${SKILL_N[job]}がLv${after}に上がった！`, 'good');
+    fx(a.x, a.y - 40, `⬆ Lv${after}`, '#2e7d32');
+    if (after === 3 || after === 6 || after === 10) diary(a, `${SKILL_N[job]}がLv${after}になった${after === 10 ? '（島いちばんの名人！）' : ''}`);
+    if (G.selected === a) renderPrio(a);
+  }
+}
+const lvTag = (a, job) => { const lv = lvOf(a, job); return lv ? `<span class="lv">Lv${lv}</span>` : ''; };
+
+// ---------- 戦いの直接指示（指示モード） ----------
+function setDraft(a, v, quiet) {
+  if (!a || a.dead) return;
+  if (v && a.baby) { addLog(`${a.name}はまだ赤ちゃんなので戦えません`, 'bad'); return; }
+  a.draft = !!v; a.dTgt = null;
+  interrupt(a); a.fight = null; a.idle = 0;
+  if (v) wake(a);
+  if (!quiet) addLog(v ? `🎯 ${a.name}を指示モードにしました（地面をタップで移動・敵をタップで攻撃）` : `✋ ${a.name}の指示モードをやめました`);
+  if (G.selected === a) updDraftBtn();
+}
+function undraftAll() {
+  let n = 0; for (const a of G.animals) if (a.draft) { setDraft(a, false, true); n++; }
+  if (n) addLog('✋ 敵がいなくなったので、指示モードを終わりました');
+}
+function draftAllFighters() {
+  const list = alive().filter(a => !a.baby && a.hp > a.maxHp * .3);
+  for (const a of list) setDraft(a, true, true);
+  G.raidOrder = 'fight'; G.alarm = true;
+  addLog('🎯 指示モード：動物をタップしてから、地面をタップで移動・敵をタップで攻撃。近くの敵には自分から反撃します', 'good');
+  const f = list.slice().sort((p, q) => eff(q, 'fight') - eff(p, 'fight'))[0];
+  if (f) { select(f); cam.x = f.x; cam.y = f.y; }
+}
+let draftKey = '', draftInfoId = null;
+function updDraftUI() {
+  const a = G.selected, on = !!(a && a.draft && !a.dead);
+  const list = alive().filter(x => x.draft);
+  const info = on && draftInfoId === a.id;
+  const key = on + '|' + info + '|' + (a ? a.id : '') + '|' + list.map(x => x.id).join(',');
+  if (key === draftKey) return;
+  draftKey = key;
+  document.body.classList.toggle('drafting', on && !info);
+  const bar = $('draftBar');
+  bar.style.display = list.length ? 'flex' : 'none';
+  bar.innerHTML = `<span>🎯 ${on ? `<b>${a.name}</b>に指示中：地面をタップで移動・敵をタップで攻撃` : '指示モードの子をタップして選んでね'}</span>`
+    + (list.length > 1 || !on ? '<button class="gq" data-op="dnext">つぎの子 ▶</button>' : '')
+    + (on ? '<button class="gq" data-op="dinfo">📋 くわしく</button><button class="gq" data-op="doff">✋ この子はやめる</button>' : '')
+    + '<button class="gq" data-op="dalloff">全員やめる</button>';
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('#draftBar button.gq'); if (!b) return;
+  const op = b.dataset.op, a = G.selected;
+  const list = alive().filter(x => x.draft);
+  if (op === 'dnext' && list.length) { const k = list.indexOf(a); const n = list[(k + 1) % list.length]; select(n); cam.x = n.x; cam.y = n.y; }
+  else if (op === 'doff' && a) setDraft(a, false);
+  else if (op === 'dalloff') { for (const x of list) setDraft(x, false, true); addLog('✋ 指示モードを全員やめました'); }
+  else if (op === 'dinfo' && a) draftInfoId = a.id;
+  updDraftUI();
+});
+const updDraftBtn = () => { const a = G.selected; const b = $('draftBtn'); if (b && a) b.textContent = a.draft ? '✋ 指示モードをやめる' : '🎯 指示モード'; };
+function enemyAt(wx, wy, r) {
+  let best = null, bd = r;
+  for (const c of G.crabs) { const d = Math.hypot(c.x - wx, c.y - 14 - wy); if (d < bd) { bd = d; best = c; } }
+  for (const s of (G.snakes || [])) { const d = Math.hypot(s.x - wx, s.y - wy); if (d < bd) { bd = d; best = s; } }
+  return best;
+}
+const isSnake = e => (G.snakes || []).includes(e);
+function draftCommand(a, wx, wy, touch) {
+  const r = (touch ? 44 : 28) / Math.min(1, cam.z);
+  const e = enemyAt(wx, wy, r);
+  if (e) { a.dTgt = e; a.path = null; fx(e.x, e.y - 30, '🎯', '#e53935'); se('pop'); return true; }
+  const tx = Math.floor(wx / T), ty = Math.floor(wy / T);
+  if (!a.walk(tx, ty)) { fx(wx, wy, '×', '#c62828'); return true; }
+  const [sx, sy] = tileOf(a);
+  const p = bfs(sx, sy, a.walk, (x, y) => x === tx && y === ty, 60000);
+  if (!p) { fx(wx, wy, '×', '#c62828'); return true; }
+  a.dTgt = null; setPath(a, p, null);
+  fx((tx + .5) * T, (ty + .5) * T, '📍', '#e53935'); se('pop');
+  return true;
+}
+function hitEnemy(a, e) {
+  a.flip = e.x < a.x;
+  const dmg = Math.round((3 + eff(a, 'fight') * 6) * (1 + (G.fightBonus || 0)));
+  e.hp -= dmg; fx(e.x, e.y - 24, '-' + dmg, '#c0392b'); se('hit');
+  gainXp(a, 'fight', 1);
+  if (e.hp <= 0) { if (isSnake(e)) killSnake(e, a); else killCrab(e, a); a.dTgt = null; }
+}
+function updateDraft(a, dt) {
+  if (a.sleeping || a.inHouse) wake(a);
+  if (a.hunger < 8) { setDraft(a, false, true); addLog(`⚠ ${a.name}はおなかがすきすぎて、指示モードを終わりました`, 'bad'); return; }
+  let e = a.dTgt;
+  if (e && !(G.crabs.includes(e) || (G.snakes || []).includes(e))) e = a.dTgt = null;
+  if (!e) {   // 近くの敵には自分から反撃
+    let bd = 1.6 * T;
+    for (const c of G.crabs) { const d = dist(a, c); if (d < bd) { bd = d; e = c; } }
+    for (const s of (G.snakes || [])) { const d = dist(a, s); if (d < bd) { bd = d; e = s; } }
+    if (e && a.path) e = null;   // 移動中は止まらない
+  }
+  if (e) {
+    if (dist(a, e) > T * .85) { a.path = null; moveToward(a, e.x, e.y, spd(a) * 1.1 * dt, a.walk); }
+    else { a.cd = (a.cd || 0) - dt; if (a.cd <= 0) { a.cd = 1; hitEnemy(a, e); a.cd = 1; } }
+    return;
+  }
+  if (a.path) followPath(a, spd(a) * dt);
+}
+function draftRing(ctx, a) {
+  ctx.save(); ctx.strokeStyle = '#e53935'; ctx.lineWidth = 2.2; ctx.setLineDash([5, 3]);
+  ctx.beginPath(); ctx.ellipse(a.x, a.y + 2, 15, 6, 0, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+  if (a.dTgt) { ctx.save(); ctx.strokeStyle = 'rgba(229,57,53,.5)'; ctx.lineWidth = 1.5; ctx.setLineDash([3, 4]); ctx.beginPath(); ctx.moveTo(a.x, a.y - 10); ctx.lineTo(a.dTgt.x, a.dTgt.y - 10); ctx.stroke(); ctx.restore(); }
+  else if (a.path && a.path.length) { const i = a.path[a.path.length - 1]; ctx.font = '14px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('📍', (i % MW + .5) * T, (Math.floor(i / MW) + .3) * T); }
+}
+
+// ---------- たぬきの行商人 ----------
+const TRADE_POOL = [
+  () => ({ get: { gear: pick(['spear', 'shield', 'axe', 'rod', 'scarf', 'strawhat', 'basket', 'pick']) }, give: { berry: 10, fish: 8 } }),
+  () => ({ get: { res: 'herb', n: 6 }, give: { berry: 15 } }),
+  () => ({ get: { res: 'meal', n: 12 }, give: { wood: 30 } }),
+  () => ({ get: { res: 'stone', n: 25 }, give: { wood: 35 } }),
+  () => ({ get: { res: 'wood', n: 40 }, give: { stone: 15, berry: 10 } }),
+  () => ({ get: { seeds: 3 }, give: { berry: 20 } }),
+  () => ({ get: { res: 'fish', n: 20 }, give: { wood: 25 } }),
+];
+const TR_N = { wood: '🪵 木', stone: '🪨 石', berry: '🫐 木の実', fish: '🐟 魚', veg: '🥕 野菜', meal: '🍲 料理', herb: '🌿 薬草' };
+const giveTxt = g => Object.entries(g).map(([r, v]) => `${TR_N[r] || r}${v}`).join('・');
+function getTxt(o) {
+  if (o.gear) { const g = GEAR[o.gear]; return `${g.i} ${g.n}${g.rare ? '（めずらしい）' : ''}<small>${g.d}</small>`; }
+  if (o.seeds) return '🌱 ふしぎな種<small>畑の収かくが2倍に</small>';
+  return `${TR_N[o.res]} ${o.n}`;
+}
+function spawnTrader() {
+  const cands = [];
+  bfs(G.cx, G.cy, landWalk, (x, y, i, d) => { if (d >= 5 && isShore(x, y, i) && !obj[i] && !G.builds.has(i) && cands.length < 6) cands.push(i); return false; }, 1e9, 70);
+  if (!cands.length) return;
+  const i = cands[0];
+  const offers = [{ get: { gear: pick(RARE) }, give: pick([{ wood: 50, stone: 20 }, { berry: 25, fish: 25 }, { wood: 40, fish: 20 }]) }];
+  const pool = TRADE_POOL.slice().sort(() => Math.random() - .5);
+  for (let k = 0; k < 4; k++) offers.push(pool[k]());
+  G.trader = { x: (i % MW + .5) * T, y: (Math.floor(i / MW) + .5) * T, until: Math.floor(dayF()) + 17.5 / 24, offers };
+  G.lastTrader = G.day;
+  reveal(i % MW, Math.floor(i / MW), 4);
+  addLog('🛶 たぬきの行商人が船でやってきた！ 夕方までいます', 'good');
+  bigToast('🛶 たぬきの行商人がやってきた！', 'あまった物を、めずらしい物と交換できます');
+  makeAlert('trader', 'friend', '<span>🛶 たぬきの行商人「いらっしゃい！ 夕方までここにいるよ」</span><span class="small">木や食べ物を、めずらしい装備・種・薬草と交換できます</span>', [
+    button('🛒 品物を見る', openTrade),
+    button('👀 見る', () => { if (G.trader) { cam.x = G.trader.x; cam.y = G.trader.y; cam.follow = null; } }),
+    button('とじる', () => removeAlert('trader')),
+  ]);
+}
+function traderMorning() {
+  if (G.trader || G.day < 3 || G.day - (G.lastTrader || 0) < 4) return;
+  if (Math.random() < .5) spawnTrader();
+}
+function traderHourly() {
+  if (G.trader && dayF() > G.trader.until) {
+    G.trader = null; removeAlert('trader');
+    if ($('tradeBox').style.display === 'flex') $('tradeBox').style.display = 'none';
+    addLog('🛶 たぬきの行商人「またね〜！」と帰っていった');
+  }
+}
+function doTrade(n) {
+  const t = G.trader; if (!t) return;
+  const o = t.offers[n]; if (!o || o.sold) return;
+  for (const r in o.give) if ((G.stock[r] || 0) < o.give[r]) { addLog(`交換するには${giveTxt(o.give)}が必要です`, 'bad'); se('bad'); return; }
+  for (const r in o.give) G.stock[r] -= o.give[r];
+  o.sold = true;
+  const g = o.get;
+  if (g.gear) { G.gearStock[g.gear] = (G.gearStock[g.gear] || 0) + 1; const who = autoEquip(g.gear); addLog(`🛒 ${GEAR[g.gear].i}${GEAR[g.gear].n}と交換した！${who ? `（${who.name}がつけました）` : '（倉庫に入れました）'}`, 'good'); }
+  else if (g.seeds) { G.seeds = (G.seeds || 0) + g.seeds; for (const b of G.builds.values()) if (b.type === 'farm') b.seed = 1; addLog('🛒 ふしぎな種と交換した！（畑の収かくが2倍に）', 'good'); }
+  else { G.stock[g.res] = (G.stock[g.res] || 0) + g.n; addLog(`🛒 ${TR_N[g.res]} ${g.n}と交換した！`, 'good'); }
+  se('done');
+  renderTrade();
+}
+function renderTrade() {
+  const t = G.trader;
+  if (!t) { $('tradeList').innerHTML = '<small>行商人は帰ってしまいました</small>'; return; }
+  $('tradeList').innerHTML = t.offers.map((o, n) => {
+    const ok = Object.entries(o.give).every(([r, v]) => (G.stock[r] || 0) >= v);
+    return `<div class="cr"><span class="cn"><b>${getTxt(o.get)}</b><small class="${ok || o.sold ? '' : 'ng'}">交換に：${giveTxt(o.give)}</small></span>${o.sold ? '<span class="chip">売り切れ</span>' : `<button class="gq" data-op="trade" data-n="${n}" ${ok ? '' : 'disabled'}>交換</button>`}</div>`;
+  }).join('');
+  const left = Math.max(0, Math.round((t.until - dayF()) * 24));
+  $('tradeNote').textContent = `あと${left}時間くらいで帰ります。品物は1つずつです。`;
+}
+function openTrade() { if (!G.trader) return; $('tradeBox').style.display = 'flex'; renderTrade(); }
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('button.gq[data-op="trade"]'); if (b) doTrade(+b.dataset.n); });
+function traderC(g, tr, t) {
+  const x = tr.x, y = tr.y;
+  shadow(g, x, y + 8, 24, 5);
+  g.lineWidth = 2.2; g.strokeStyle = OL;
+  g.beginPath(); g.moveTo(x - 24, y - 2); g.quadraticCurveTo(x, y + 16, x + 24, y - 2); g.closePath(); g.fillStyle = '#b9824f'; g.fill(); g.stroke();
+  g.strokeStyle = '#8a5f3b'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(x - 18, y + 3); g.lineTo(x + 18, y + 3); g.stroke();
+  rr(g, x + 7, y - 14, 12, 10, 2); g.fillStyle = '#e9c46a'; g.fill(); g.lineWidth = 1.6; g.strokeStyle = OL; g.stroke();   // 荷物
+  drawAnimal(g, SP.tanuki.look, x - 5, y - 1, 1.05, t, { phase: 1, gear: { wear: 'strawhat' } });
+  g.font = '15px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText('🛒', x + 2, y - 48 + Math.sin(t * 3) * 2);
+}
+
 // ---------- ケガ・死 ----------
 function damage(a, amt, src) {
   if (a.dead) return;
@@ -2839,7 +3062,7 @@ function spawnRaid() {
 }
 function crabGone(c) {
   G.crabs = G.crabs.filter(x => x !== c);
-  if (!G.crabs.length) { G.alarm = false; G.raidOrder = null; removeAlert('raid'); addLog('🌅 朝になって、おそってきたものたちは帰っていった', 'good'); }
+  if (!G.crabs.length) { G.alarm = false; G.raidOrder = null; removeAlert('raid'); undraftAll(); addLog('🌅 朝になって、おそってきたものたちは帰っていった', 'good'); }
 }
 function updateCrab(c, dt) {
   // 朝になったら海へ帰る
@@ -2910,7 +3133,7 @@ function killCrab(c, by) {
     fx(c.x, c.y - 20, '+2 🐟', '#2e7d32');
     addLog(`⚔ ${by.name}が大ガニをたおした！（カニ肉 +2）`, 'good');
   }
-  if (!G.crabs.length) { G.alarm = false; G.raidOrder = null; removeAlert('raid'); addLog('🎉 大ガニを追いはらった！', 'good'); }
+  if (!G.crabs.length) { G.alarm = false; G.raidOrder = null; removeAlert('raid'); undraftAll(); addLog('🎉 大ガニを追いはらった！', 'good'); }
 }
 function combatCheck(a, dt) {
   let c = null, bd = 1e9;
@@ -2959,7 +3182,7 @@ function updateFight(a, dt) {
     if (a.cd <= 0) {
       a.cd = 1;
       const dmg = Math.round((3 + eff(a, 'fight') * 6) * (1 + (G.fightBonus || 0)));
-      c.hp -= dmg; fx(c.x, c.y - 24, '-' + dmg, '#c0392b'); se('hit');
+      c.hp -= dmg; fx(c.x, c.y - 24, '-' + dmg, '#c0392b'); se('hit'); gainXp(a, 'fight', 1);
       if (c.hp <= 0) killCrab(c, a);
     }
   }
@@ -2999,8 +3222,9 @@ function updateAnimal(a, dt) {
     if (a.hp <= 0) { die(a, '空腹'); return; }
   } else if (a.hunger > 30) a.toldStarve = false;
   a.rv = (a.rv || 0) - dt;
-  if (a.rv <= 0) { a.rv = .3; const [tx, ty] = tileOf(a); reveal(tx, ty, a.task === 'explore' ? 8 : 6); }
+  if (a.rv <= 0) { a.rv = .3; const [tx, ty] = tileOf(a); reveal(tx, ty, a.task === 'explore' ? 8 : 6); if (a.task === 'explore' && a.path) gainXp(a, 'explore', .08); }
 
+  if (a.draft) { updateDraft(a, dt); return; }
   if (a.quest && updateQuest(a, dt)) return;
   if (a.chase) { updateChase(a, dt); return; }
   if (a.fleeFrom) { updateFlee(a, dt); return; }
@@ -3016,7 +3240,7 @@ function updateAnimal(a, dt) {
   }
   if ((a.hunger < 22 || a.cold > 75 || a.heat > 75) && !['eat', 'warm', 'cool'].includes(a.task) && !a.urgent) { interrupt(a); a.urgent = true; }
   if (a.path) { followPath(a, spd(a) * (ter[tileOf(a)[1] * MW + tileOf(a)[0]] === 1 ? .7 : 1) * dt); return; }
-  if (a.act) { a.act.t -= dt * (WORK_ACTS.has(a.act.n) ? workMul(a) : 1); if (a.act.t <= 0) { const f = a.act.done; a.act = null; if (f) f(); } return; }
+  if (a.act) { a.act.t -= dt * (WORK_ACTS.has(a.act.n) ? workMul(a) : 1); if (a.act.t <= 0) { const f = a.act.done, an = a.act.n; a.act = null; if (XP_PER[an]) gainXp(a, an, XP_PER[an]); if (f) f(); } return; }
   if (a.idle > 0) { a.idle -= dt; return; }
   a.urgent = false;
   think(a);
@@ -3073,7 +3297,8 @@ function update(dt) {
     // 新しい動物が浜辺に流れつく（2日目から2日おき）
     if (G.day >= (G.nextArrival || 2)) { G.nextArrival = G.day + 2; spawnVisitor(); }
     dailyEvent(); tryBirths(); growUp();
-    if (G.snakes && G.snakes.length < 6 && Math.random() < .4) spawnSnake(25);   // 新しいヘビ
+    if (G.snakes && G.snakes.length < 6 && Math.random() < .4) spawnSnake(25);
+    traderMorning();   // 新しいヘビ
     saveGame(false);   // 毎朝自動セーブ
   }
   updateVisitor(dt); updateHerd(dt); updateBoss(dt); checkFinds(); updateTowers(dt); checkSprings(); updateSnakes(dt);
@@ -3631,6 +3856,7 @@ function render(t) {
     if (a.dead || a.inHouse) continue;
     if (a.x < vx0 - 60 || a.x > vx1 + 60 || a.y < vy0 - 60 || a.y > vy1 + 60) continue;
     list.push({ y: a.y, d: () => {
+      if (a.draft) draftRing(ctx, a);
       if (a === G.selected) { ctx.lineWidth = 3; ctx.strokeStyle = '#ffb300'; ctx.beginPath(); ctx.ellipse(a.x, a.y + 1, 16, 6, 0, 0, Math.PI * 2); ctx.stroke(); }
       const inWater = ter[tileOf(a)[1] * MW + tileOf(a)[0]] === 1;
       const shiver = (a.cold || 0) > 30 ? Math.sin(t * 50 + a.phase) * 1.2 : 0;   // 寒いとふるえる
@@ -3645,6 +3871,7 @@ function render(t) {
     list.push({ y: m.y, d: () => drawAnimal(ctx, m.look, m.x, m.y, .85 * SIZE_SCALE[SP[G.herd.sp].size], t, { phase: m.phase, flip: m.flip, walk: m.moving }) });
   }
   for (const s of (G.snakes || [])) { if (s.x > vx0 - 60 && s.x < vx1 + 60 && s.y > vy0 - 60 && s.y < vy1 + 60) list.push({ y: s.y, d: () => snakeC(ctx, s, t) }); }
+  if (G.trader) list.push({ y: G.trader.y, d: () => traderC(ctx, G.trader, t) });
   const bs = G.boss;
   if (bs && !bs.dead && bs.x > vx0 - 120 && bs.x < vx1 + 120 && bs.y > vy0 - 120 && bs.y < vy1 + 120) list.push({ y: bs.y, d: () => bossC(ctx, bs, t) });
   const vis = G.visitor;
@@ -3818,7 +4045,7 @@ function statsHTML(a) {
   return STAT_N.map(([k, n]) => `<div class="st"><span>${n}</span><b style="--v:${a.st[k] * 10}${k === 'app' ? ';--c:#e57373' : ''}"></b><em>${a.st[k]}</em></div>`).join('');
 }
 function jobsHTML(a) {
-  return ['chop', 'gather', 'fish', 'mine', 'build', 'cook', 'doctor', 'explore', 'fight'].map(j => `<div>${JOB_ICON[j]} ${j === 'fight' ? '戦い' : JOBS[j]} <span class="stars">${starStr(eff(a, j))}</span></div>`).join('');
+  return ['chop', 'gather', 'fish', 'mine', 'build', 'cook', 'doctor', 'explore', 'fight'].map(j => `<div>${JOB_ICON[j]} ${j === 'fight' ? '戦い' : JOBS[j]} <span class="stars">${starStr(eff(a, j))}</span>${lvTag(a, j)}</div>`).join('');
 }
 function traitsHTML(a) {
   const c = SP[a.sp].comfort;
@@ -3827,6 +4054,7 @@ function traitsHTML(a) {
 function doingText(a) {
   if (a.left) return '🎒 家出してしまった';
   if (a.dead) return '💀 天国にいます';
+  if (a.draft) return a.dTgt ? '🎯 指示モード：敵をねらっている' : a.path ? '🎯 指示モード：移動中' : '🎯 指示モード：待機中（地面をタップで移動・敵をタップで攻撃）';
   if (a.quest) return '⚔ カニの王さまと戦っている';
   if (a.sulkT > 0 && !a.sleeping) return '😤 すねてサボっている';
   if (a.chase) return `⚠ ${a.chase.p.name}を追いかけている！`;
@@ -3864,6 +4092,7 @@ function select(a) {
   renderPrio(a); renderGear(a);
   fillHomeSel();
   $('followBtn').textContent = cam.follow === a ? '🎥 ついていくのをやめる' : '🎥 ついていく';
+  updDraftBtn();
   refreshPanel(true);
   buildTeamSel();
 }
@@ -3889,7 +4118,7 @@ function refreshPanel() {
 $('pclose').onclick = () => select(null);
 function renderPrio(a) {
   ensurePrio(a);
-  $('pprio').innerHTML = PRIO_JOBS.map(j => `<div class="prow"><span>${JOB_ICON[j]} ${JOBS[j]} <span class="stars">${starStr(eff(a, j))}</span></span>${prioCell(a, j)}</div>`).join('');
+  $('pprio').innerHTML = PRIO_JOBS.map(j => `<div class="prow"><span>${JOB_ICON[j]} ${JOBS[j]} <span class="stars">${starStr(eff(a, j))}</span>${lvTag(a, j)}</span>${prioCell(a, j)}</div>`).join('');
 }
 function renderPrioTable() {
   $('prioTbl').innerHTML = `<tr><th></th>${PRIO_JOBS.map(j => `<th>${JOB_ICON[j]}<br>${JOBS[j]}</th>`).join('')}</tr>`
@@ -3927,6 +4156,7 @@ $('homeSel').onchange = e => {
   fillHomeSel();
 };
 $('feedBtn').onclick = () => { if (G.selected) feed(G.selected); };
+$('draftBtn').onclick = () => { const a = G.selected; if (a && !a.dead) setDraft(a, !a.draft); };
 $('followBtn').onclick = () => { const a = G.selected; if (!a) return; cam.follow = cam.follow === a ? null : a; $('followBtn').textContent = cam.follow === a ? '🎥 ついていくのをやめる' : '🎥 ついていく'; };
 
 // ---------- 下の動物ボタン ----------
@@ -3971,6 +4201,7 @@ function updateHUD() {
   const icon = isNight() ? '🌙' : h < 7 ? '🌅' : h >= 18 ? '🌇' : '☀';
   const ex = Math.round(G.landExplored / Math.max(1, G.landTotal) * 100);
   const S = SEASONS[seasonIdx()];
+  updDraftUI();
   $('clock').innerHTML = `<div class="c1">${yearN()}年目　${S.icon}${S.n} ${seasonDay()}日目　${icon} ${hh}:${String(mm).padStart(2, '0')}</div><div class="c2">${WEATHER[G.weather].icon} ${G.weather} ${Math.round(G.temp)}℃　🧭 探検 ${ex}%　🐾 ${alive().length}匹　🔍 発見 ${G.found || 0}/${G.poiTotal || 0}　<span title="島の豊かさ（多いほど敵が強くなる）">💰 ${G.wealth == null ? calcWealth() : G.wealth}</span></div>`;
   const s = G.stock, list = alive();
   for (const [k] of RES_LIST) { const el = $('res_' + k); if (el) el.lastChild.textContent = s[k] || 0; }
@@ -4141,6 +4372,9 @@ function clickAt(sx, sy, touch) {
   const [wx, wy] = s2w(sx, sy);
   let best = null, bd = (touch ? 44 : 26) / Math.min(1, cam.z);
   for (const a of alive()) { if (a.inHouse) continue; const d = Math.hypot(a.x - wx, a.y - 14 - wy); if (d < bd) { bd = d; best = a; } }
+  const sel = G.selected;
+  if (sel && sel.draft && !sel.dead && (!best || best === sel || enemyAt(wx, wy, (touch ? 44 : 28) / Math.min(1, cam.z)))) { if (best !== sel) { draftCommand(sel, wx, wy, touch); return; } }
+  if (!best && G.trader && Math.hypot(G.trader.x - wx, G.trader.y - 14 - wy) < (touch ? 50 : 32) / Math.min(1, cam.z)) { openTrade(); return; }
   if (!best) {
     const r = (touch ? 40 : 24) / Math.min(1, cam.z);
     for (const gr of G.graves) if (Math.hypot(gr.x - wx, gr.y - 8 - wy) < r) { const a = G.animals.find(x => x.id === gr.id); if (a) { openStory(a); return; } }
@@ -4250,7 +4484,7 @@ const TUT = [
   { t: 'たき火を建てよう', x: () => '右下の「<b>🔨 建てる</b>」→「<b>🔥 くらし</b>」→「<b>🔥 たき火</b>」を選んで、キャンプの近く（緑の四角が出る場所）をタップします。置くと「建築」担当の動物が建てに行きます。たき火のまわりは暖かくなります。木や岩がじゃまなときは、タップして「<b>🪓 切る予約</b>」をすると片づけてくれます（木の上に置くと、自動で切ってから建てます）。', ok: () => countB('fire') >= 1, hl: 'bOpen', reward: () => { G.stock.wood += 5; return '🪵 木 +5'; } },
   { t: '石を10こ集めよう', x: () => '家や見張り台を建てるには石が必要です。だれかの<b>仕事の優先度</b>で「<b>⛏ 石集め</b>」を<b>1</b>にすると早く集まります（岩場や石のある場所へ行きます）。', p: () => `🪨 石 ${Math.min(10, G.stock.stone)} / 10`, ok: () => G.stock.stone >= 10 },
   { t: '家を建てよう', x: () => '「🔨 建てる」→「<b>🏠 住まい</b>」→「<b>🏠 家</b>」（木25・石10）。家は2匹まで中で眠れて、<b>カニにおそわれず</b>、冬は暖かく夏は涼しい場所です。', p: () => G.stock.wood < 25 || G.stock.stone < 10 ? `材料：🪵 ${G.stock.wood}/25　🪨 ${G.stock.stone}/10` : '材料はそろっています！', ok: () => countB('house') >= 1, hl: 'bOpen', reward: () => { G.stock.fish += 5; return '🐟 魚 +5'; } },
-  { t: 'はじめての夜をこえよう', x: () => '夜はみんな焚き火のそばや家・ベッドで眠ります。<b>2日目の夜からは、浜辺に大ガニが上陸</b>してきます。戦いに強い動物が迎えうちます。敵の強さは画面上の「<b>💰 島の豊かさ</b>」で決まり、物や建物がふえるほど強くなります。襲来のお知らせの「<b>⚔ みんなで戦う</b>」「<b>🏠 みんな避難</b>」で指示も出せます。', p: () => `${G.day}日目`, ok: () => G.day >= 2 && hour() >= 6 },
+  { t: 'はじめての夜をこえよう', x: () => '夜はみんな焚き火のそばや家・ベッドで眠ります。<b>2日目の夜からは、浜辺に大ガニが上陸</b>してきます。戦いに強い動物が迎えうちます。敵の強さは画面上の「<b>💰 島の豊かさ</b>」で決まり、物や建物がふえるほど強くなります。襲来のお知らせの「<b>⚔ みんなで戦う</b>」「<b>🏠 みんな避難</b>」で指示も出せます。「<b>🎯 自分で指示</b>」なら、動物をタップ→地面や敵をタップで、1匹ずつ動かせます。', p: () => `${G.day}日目`, ok: () => G.day >= 2 && hour() >= 6 },
   { t: '新しい仲間をむかえよう', x: () => 'ときどき<b>浜辺に動物が流れつきます</b>。お知らせの「🐾 仲間にする」で仲間になります。肉食の動物は、おなかがすくと小さな草食動物をねらうことがあるので、<b>相性の注意</b>も見て選びましょう。', p: () => `仲間 ${alive().length}匹（3匹になったらクリア）`, ok: () => alive().length >= 3, reward: () => { G.stock.berry += 5; G.stock.fish += 5; return '🫐 +5　🐟 +5'; } },
   { t: '「？」を調べよう', x: () => '島のあちこちに<b>「？」マーク</b>が隠れています。探検していると見つかって、動物が調べに行きます。だれかの<b>仕事の優先度</b>で「<b>🧭 探検</b>」を<b>1</b>にすると早く見つかります。はちみつ・地図・化石など、いろいろなものが出てきます。探検の途中で<b>🐍 ヘビ</b>に会うことも。毒にやられたら、薬草で看病してあげてください。', p: () => `🔍 発見 ${Math.min(1, G.found || 0)} / 1`, ok: () => (G.found || 0) >= 1, hl: 'pprio' },
   { t: '柵と門でキャンプを囲もう', x: () => '「🔨 建てる」→「<b>🛡 守り</b>」→「<b>🪵 柵</b>」は、なぞるように<b>ドラッグ</b>すると並べて置けます。柵はカニも動物も通れないので、出入り口に「<b>🚪 門</b>」をつけましょう（仲間だけ通れます）。<b>🪤 トゲの罠</b>や<b>🗼 見張り台</b>も、大ガニ対策に役立ちます。', p: () => `柵 ${Math.min(10, countB('fence'))} / 10　門 ${Math.min(1, countB('gate'))} / 1`, ok: () => countB('fence') >= 10 && countB('gate') >= 1, hl: 'bOpen' },
@@ -4423,7 +4657,7 @@ function unrle(str, out) {
   let i = 0;
   for (const part of str.split(',')) { const [v, n] = part.split(':').map(Number); out.fill(v, i, i + n); i += n; }
 }
-const A_EXTRA = ['gear', 'bedB', 'prio', 'bed', 'mood', 'mems', 'injury', 'sick', 'baby', 'born', 'parents', 'diary', 'kills', 'lastBaby', 'left', 'cooked'];
+const A_EXTRA = ['xp', 'gear', 'bedB', 'prio', 'bed', 'mood', 'mems', 'injury', 'sick', 'baby', 'born', 'parents', 'diary', 'kills', 'lastBaby', 'left', 'cooked'];
 const pickX = a => Object.fromEntries(A_EXTRA.filter(k => a[k] !== undefined && a[k] !== null).map(k => [k, a[k]]));
 function saveGame(manual) {
   if (state !== 'play' || G.over || G.noSave) return false;
@@ -4443,7 +4677,7 @@ function saveGame(manual) {
            houseNo: G.houseNo, season: G.season, weather: G.weather, landTotal: G.landTotal, landExplored: G.landExplored,
            nextArrival: G.nextArrival, tut: G.tut,
            herd: G.herd ? { ...G.herd, m: undefined } : null, boss: G.boss, endings: G.endings, raidMul: G.raidMul, chest: G.chest,
-           caveFound: G.caveFound, caveDone: G.caveDone, found: G.found, poiTotal: G.poiTotal, fightBonus: G.fightBonus, seeds: G.seeds, births: G.births, herdRaidDay: G.herdRaidDay,
+           caveFound: G.caveFound, caveDone: G.caveDone, found: G.found, poiTotal: G.poiTotal, fightBonus: G.fightBonus, seeds: G.seeds, births: G.births, herdRaidDay: G.herdRaidDay, trader: G.trader, lastTrader: G.lastTrader || 0,
            marks: [...G.marks], gearStock: G.gearStock, craftQ: G.craftQ, crafted: G.crafted || 0, snakes: (G.snakes || []).map(s => ({ ...s, tgt: null })) },
       cam: { x: cam.x, y: cam.y, z: cam.z },
     };
@@ -4469,6 +4703,7 @@ function loadGame(data) {
   Object.assign(G, data.g);
   G.rel = new Map(data.g.rel); G.crabs = []; G.fx = []; G.alarm = false; G.over = false; G.selected = null;
   G.chestBy = null; G.bossAttack = false;
+  G.trader = data.g.trader || null; G.lastTrader = data.g.lastTrader || 0;
   G.gearStock = data.g.gearStock || {}; G.craftQ = data.g.craftQ || []; G.crafted = data.g.crafted || 0;
   G.marks = new Set(); for (const i of (data.g.marks || [])) if (obj[i] && MARKABLE.has(obj[i].k)) { obj[i].mark = true; G.marks.add(i); }
   G.snakes = Array.isArray(data.g.snakes) ? data.g.snakes.map(s => ({ ...s, tgt: null })) : null;
@@ -4729,6 +4964,7 @@ function setPTab(t) {
 document.querySelectorAll('.ptabs button').forEach(b => b.onclick = () => setPTab(b.dataset.t));
 function statusIcon(a) {
   if (a.dead) return '';
+  if (a.draft) return '🎯';
   if (a.chase || a.fleeFrom || a.fight || a.quest) return '⚔';
   if (a.poison) return '☠';
   if (a.sick) return '🤧';
@@ -4755,6 +4991,7 @@ $('bStop').onclick = () => { setBuildMode(null); $('bTools').style.display = 'no
 $('prioBtn').onclick = () => { if (state !== 'play') return; renderPrioTable(); $('prioBox').style.display = 'flex'; };
 $('prioClose').onclick = () => { $('prioBox').style.display = 'none'; };
 $('craftClose').onclick = () => { $('craftBox').style.display = 'none'; };
+$('tradeClose').onclick = () => { $('tradeBox').style.display = 'none'; };
 
 let last = performance.now(), uiT = 0;
 function frame(now) {
@@ -4811,6 +5048,8 @@ if (params.get('auto')) {
     recomputeRooms();
   }
   if (params.get('marktest')) { const L = []; bfs(G.cx, G.cy, landWalk, (x, y, i, dd) => { if (obj[i] && obj[i].k === 'tree' && L.length < 10) L.push(i); return false; }, 1e9, 30); L.forEach(i => setMark(i, true)); G.markStart = G.marks.size; }
+  if (params.get('drafttest')) { G.time = 21 / 24; G.day = 3; spawnRaid(); draftAllFighters(); for (const x of alive()) if (x.draft) x.dTgt = G.crabs[0]; G.dStart = G.crabs.length; }
+  if (params.get('tradertest')) { G.day = 5; spawnTrader(); if (G.trader) { cam.x = G.trader.x; cam.y = G.trader.y; } Object.assign(G.stock, { wood: 120, stone: 40, berry: 60, fish: 40 }); if (params.get('tradertest') === '2') openTrade(); }
   if (params.get('geartest')) {
     Object.assign(G.stock, { wood: 200, stone: 80, berry: 60, herb: 10 });
     const bi = (G.cy + 5) * MW + G.cx + 5; obj[bi] = null; objChanged(bi); placeBuild('bench', bi, true); completeBuild(G.builds.get(bi), alive()[0]);
@@ -4829,6 +5068,7 @@ if (params.get('auto')) {
   if (params.get('openbuild')) $('bOpen').click();
   if (params.get('geartest')) { const el = document.getElementById('err'); el.style.display = 'block'; el.textContent = 'crafted ' + (G.crafted || 0) + ' | queue ' + G.craftQ.map(o => o.k + ':' + Math.round(o.prog)).join(',') + ' | stock ' + JSON.stringify(G.gearStock) + ' | ' + G.animals.map(a => a.name + ' ' + JSON.stringify(a.gear || {}) + ' fight' + eff(a, 'fight').toFixed(2)).join(' / '); }
   if (params.get('opencraft')) openCraft();
+  if (params.get('drafttest') || params.get('tradertest') || params.get('xptest')) { const el = document.getElementById('err'); el.style.display = 'block'; el.textContent = 'crabs ' + (G.dStart || 0) + ' -> ' + G.crabs.length + ' | trader ' + (G.trader ? G.trader.offers.length + ' offers' : 'none') + ' | ' + G.animals.map(a => a.name + (a.draft ? '[D]' : '') + (a.dead ? '[DEAD]' : '') + ' ' + JSON.stringify(a.xp || {}).replace(/\.\d+/g, '') + ' ' + PRIO_JOBS.concat(['fight']).map(j => lvOf(a, j)).join('')).join(' / '); }
   if (params.get('geartab')) { select(alive()[0]); setPTab('gear'); }
   if (params.get('marktest') || params.get('snaketest')) { const el = document.getElementById('err'); el.style.display = 'block'; el.textContent = 'marks ' + (G.markStart || 0) + ' -> ' + G.marks.size + ' | snakes ' + G.snakes.length + ' | poison ' + G.animals.filter(a => a.poison).map(a => a.name).join(',') + ' | wood ' + G.stock.wood + ' fish ' + G.stock.fish + ' | ' + G.animals.map(a => a.name + ' hp' + Math.round(a.hp) + (a.dead ? 'DEAD' : '')).join(' '); }
   if (params.get('priotbl')) { renderPrioTable(); $('prioBox').style.display = 'flex'; }
