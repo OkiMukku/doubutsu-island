@@ -82,6 +82,12 @@
   /* 建てるメニュー */
   #build { position: fixed; right: 8px; bottom: 166px; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; z-index: 25; }
   .bhead { grid-column: 1 / -1; font-size: 12px; font-weight: 700; color: #7a6656; }
+  #bTools .bcats { grid-column: 1 / -1; display: flex; gap: 4px; }
+  #bTools .bcats button { flex: 1; flex-direction: row; justify-content: center; min-width: 0; background: #f6f1e8; border: 2px solid transparent; border-radius: 10px; padding: 5px 2px; font-size: 12px; font-weight: 700; color: #7a6656; white-space: nowrap; }
+  #bTools .bcats button.on { background: #fff3c4; border-color: #5b4636; color: #3b2f25; }
+  .bdesc { grid-column: 1 / -1; font-size: 11.5px; color: #7a6656; line-height: 1.5; min-height: 1.5em; }
+  #bTools .bfoot { grid-column: 1 / -1; display: flex; gap: 6px; margin-top: 2px; }
+  #bTools .bfoot button { flex: 1; flex-direction: row; justify-content: center; font-size: 12.5px; padding: 6px 4px; }
   #bCur { display: none; background: #fff3c4; border: 2px solid #5b4636; border-radius: 14px; padding: 4px 6px 4px 12px; font-weight: 700; font-size: 13px; align-items: center; gap: 6px; box-shadow: 0 2px 0 rgba(91,70,54,.25); max-width: 94vw; }
   #build.picked #bCur { display: flex; }
   #bCur button { background: #fff; border: 2px solid #5b4636; border-radius: 10px; padding: 3px 10px; font-weight: 700; color: #5b4636; font-size: 12px; white-space: nowrap; }
@@ -219,7 +225,6 @@
     #build.picked #bTools { display: none !important; }
     #bTools button { min-width: 0 !important; padding: 6px 2px !important; font-size: 12px !important; }
     #bTools { overflow-x: hidden; }
-    .bhead::after { content: '（下にスクロールできます）'; font-weight: 400; }
     #sndPop { top: 44px; right: 6px; }
     #bigToast { font-size: 19px; padding: 12px 18px; }
     .mem { min-width: 58px; }
@@ -245,22 +250,23 @@
 <div id="build">
   <div id="bTools">
     <div class="bhead">🔨 建てるものを選んでね</div>
-    <button data-b="fence"><span class="bi">🪵</span>柵<small></small></button>
-    <button data-b="gate"><span class="bi">🚪</span>門<small></small></button>
-    <button data-b="wall"><span class="bi">🧱</span>壁<small></small></button>
-    <button data-b="door"><span class="bi">🚪</span>ドア<small></small></button>
-    <button data-b="roof"><span class="bi">🟫</span>屋根<small>木1/マス</small></button>
-    <button data-b="bed"><span class="bi">🛏</span>ベッド<small></small></button>
-    <button data-b="trap"><span class="bi">🪤</span>トゲの罠<small></small></button>
-    <button data-b="tower"><span class="bi">🗼</span>見張り台<small></small></button>
-    <button data-b="house"><span class="bi">🏠</span>家<small></small></button>
-    <button data-b="fire"><span class="bi">🔥</span>たき火<small></small></button>
-    <button data-b="shade"><span class="bi">⛱</span>日よけ<small></small></button>
-    <button data-b="farm"><span class="bi">🥕</span>畑<small></small></button>
-    <button data-b="kitchen"><span class="bi">🍳</span>かまど<small></small></button>
-    <button data-b="raft"><span class="bi">🛶</span>いかだ<small></small></button>
-    <button data-b="remove"><span class="bi">🧹</span>こわす<small>取り消し</small></button>
-    <button data-b="none"><span class="bi">✕</span>とじる<small>　</small></button>
+    <div class="bcats"><button data-cat="home">🏠 住まい</button><button data-cat="life">🔥 くらし</button><button data-cat="guard">🛡 守り</button><button data-cat="special">⭐ とくべつ</button></div>
+    <div class="bdesc" id="bDesc"></div>
+    <button data-b="wall" data-c="home"><span class="bi">🧱</span>壁<small></small></button>
+    <button data-b="door" data-c="home"><span class="bi">🚪</span>ドア<small></small></button>
+    <button data-b="roof" data-c="home"><span class="bi">🟫</span>屋根<small>木1/マス</small></button>
+    <button data-b="bed" data-c="home"><span class="bi">🛏</span>ベッド<small></small></button>
+    <button data-b="house" data-c="home"><span class="bi">🏠</span>家<small></small></button>
+    <button data-b="fire" data-c="life"><span class="bi">🔥</span>たき火<small></small></button>
+    <button data-b="shade" data-c="life"><span class="bi">⛱</span>日よけ<small></small></button>
+    <button data-b="farm" data-c="life"><span class="bi">🥕</span>畑<small></small></button>
+    <button data-b="kitchen" data-c="life"><span class="bi">🍳</span>かまど<small></small></button>
+    <button data-b="fence" data-c="guard"><span class="bi">🪵</span>柵<small></small></button>
+    <button data-b="gate" data-c="guard"><span class="bi">🚪</span>門<small></small></button>
+    <button data-b="trap" data-c="guard"><span class="bi">🪤</span>トゲの罠<small></small></button>
+    <button data-b="tower" data-c="guard"><span class="bi">🗼</span>見張り台<small></small></button>
+    <button data-b="raft" data-c="special"><span class="bi">🛶</span>いかだ<small></small></button>
+    <div class="bfoot"><button data-b="remove">🧹 こわす・取り消す</button><button data-b="none">✕ とじる</button></div>
   </div>
   <div id="bCur"><span id="bCurTxt"></span><button id="bChange">かえる</button><button id="bStop">やめる</button></div>
   <button id="bOpen">🔨 建てる</button>
@@ -3585,7 +3591,7 @@ const BHINT = {
 };
 function setBuildMode(m) {
   buildMode = m && m !== 'none' ? m : null;
-  document.querySelectorAll('#bTools button').forEach(b => b.classList.toggle('on', b.dataset.b === buildMode));
+  document.querySelectorAll('#bTools button[data-b]').forEach(b => b.classList.toggle('on', b.dataset.b === buildMode));
   $('bHint').style.display = buildMode ? 'block' : 'none';
   if (buildMode) $('bHint').textContent = BHINT[buildMode];
   $('build').classList.toggle('picked', !!buildMode);
@@ -3601,7 +3607,22 @@ $('bOpen').onclick = () => {
   $('bOpen').classList.toggle('on', open);
   if (!open) setBuildMode(null);
 };
-document.querySelectorAll('#bTools button').forEach(b => b.onclick = () => {
+// 建てるメニューのタブ（住まい・くらし・守り・とくべつ）
+const BCAT_DESC = {
+  home: '🧱壁（とドア）で囲んで🟫屋根をかけると「部屋」に。部屋の中は気温がおだやかです',
+  life: '暖かさ・涼しさ・食べ物のための建物です',
+  guard: '大ガニや野生の群れから、キャンプを守る建物です',
+  special: '島を出るためのいかだ（浜辺に1つだけ置けます）',
+};
+function setBCat(cat) {
+  G.bcat = cat;
+  document.querySelectorAll('#bTools .bcats button').forEach(b => b.classList.toggle('on', b.dataset.cat === cat));
+  document.querySelectorAll('#bTools button[data-c]').forEach(b => { b.style.display = b.dataset.c === cat ? '' : 'none'; });
+  $('bDesc').textContent = BCAT_DESC[cat];
+}
+document.querySelectorAll('#bTools .bcats button').forEach(b => b.onclick = () => setBCat(b.dataset.cat));
+setBCat('home');
+document.querySelectorAll('#bTools button[data-b]').forEach(b => b.onclick = () => {
   if (b.dataset.b === 'none') { $('bTools').style.display = 'none'; $('bOpen').classList.remove('on'); setBuildMode(null); return; }
   setBuildMode(buildMode === b.dataset.b ? null : b.dataset.b);
 });
@@ -3798,13 +3819,15 @@ const TUT = [
   { t: '動物をタップしてみよう', x: () => '島の動物か、画面下の<b>動物ボタン</b>をタップしてください。能力・おなか・なかよし度などが見られます。', ok: () => !!G.selected, hl: 'team' },
   { t: '仕事の優先度を決めてみよう', x: () => '動物のパネルの「<b>仕事の優先度</b>」で、<b>木こり</b>の数字をタップして「<b>1</b>」にしてみましょう。1がいちばん先にやる仕事、✕はしない仕事です。★が多い仕事ほど得意です。右上の📋で全員分をまとめて見られます。', ok: () => G.animals.some(a => a.prio && a.prio.chop === 1), hl: 'pprio', next: true },
   { t: '木を15こ集めよう', x: () => '動物が木を切ってキャンプへ運びます。待つのが長いときは、右上の <b>▶▶</b> で早送りできます。', p: () => `🪵 木 ${Math.min(15, G.stock.wood)} / 15`, ok: () => G.stock.wood >= 15, hl: 'speed', reward: () => { G.stock.berry += 5; return '🫐 木の実 +5'; } },
-  { t: 'たき火を建てよう', x: () => '右下の「<b>🔨 建てる</b>」→「<b>🔥 たき火</b>」を選んで、キャンプの近く（緑の四角が出る場所）をタップします。置くと「建築」担当の動物が建てに行きます。たき火のまわりは暖かくなります。', ok: () => countB('fire') >= 1, hl: 'bOpen', reward: () => { G.stock.wood += 5; return '🪵 木 +5'; } },
-  { t: '石を10こ集めよう', x: () => '家を建てるには石が必要です。だれかの担当を「<b>⛏ 石集め</b>」にすると早く集まります（岩場や石のある場所へ行きます）。', p: () => `🪨 石 ${Math.min(10, G.stock.stone)} / 10`, ok: () => G.stock.stone >= 10 },
-  { t: '家を建てよう', x: () => '「🔨 建てる」→「<b>🏠 家</b>」（木25・石10）。家は2匹まで中で眠れて、<b>カニにおそわれず</b>、冬は暖かく夏は涼しい場所です。', p: () => G.stock.wood < 25 || G.stock.stone < 10 ? `材料：🪵 ${G.stock.wood}/25　🪨 ${G.stock.stone}/10` : '材料はそろっています！', ok: () => countB('house') >= 1, hl: 'bOpen', reward: () => { G.stock.fish += 5; return '🐟 魚 +5'; } },
-  { t: 'はじめての夜をこえよう', x: () => '夜はみんな焚き火のそばや家で眠ります。<b>2日目の夜からは、浜辺に大ガニが上陸</b>してきます。戦いに強い動物が迎えうちます。', p: () => `${G.day}日目`, ok: () => G.day >= 2 && hour() >= 6 },
+  { t: 'たき火を建てよう', x: () => '右下の「<b>🔨 建てる</b>」→「<b>🔥 くらし</b>」→「<b>🔥 たき火</b>」を選んで、キャンプの近く（緑の四角が出る場所）をタップします。置くと「建築」担当の動物が建てに行きます。たき火のまわりは暖かくなります。', ok: () => countB('fire') >= 1, hl: 'bOpen', reward: () => { G.stock.wood += 5; return '🪵 木 +5'; } },
+  { t: '石を10こ集めよう', x: () => '家や見張り台を建てるには石が必要です。だれかの<b>仕事の優先度</b>で「<b>⛏ 石集め</b>」を<b>1</b>にすると早く集まります（岩場や石のある場所へ行きます）。', p: () => `🪨 石 ${Math.min(10, G.stock.stone)} / 10`, ok: () => G.stock.stone >= 10 },
+  { t: '家を建てよう', x: () => '「🔨 建てる」→「<b>🏠 住まい</b>」→「<b>🏠 家</b>」（木25・石10）。家は2匹まで中で眠れて、<b>カニにおそわれず</b>、冬は暖かく夏は涼しい場所です。', p: () => G.stock.wood < 25 || G.stock.stone < 10 ? `材料：🪵 ${G.stock.wood}/25　🪨 ${G.stock.stone}/10` : '材料はそろっています！', ok: () => countB('house') >= 1, hl: 'bOpen', reward: () => { G.stock.fish += 5; return '🐟 魚 +5'; } },
+  { t: 'はじめての夜をこえよう', x: () => '夜はみんな焚き火のそばや家・ベッドで眠ります。<b>2日目の夜からは、浜辺に大ガニが上陸</b>してきます。戦いに強い動物が迎えうちます。襲来のお知らせの「<b>⚔ みんなで戦う</b>」「<b>🏠 みんな避難</b>」で指示も出せます。', p: () => `${G.day}日目`, ok: () => G.day >= 2 && hour() >= 6 },
   { t: '新しい仲間をむかえよう', x: () => 'ときどき<b>浜辺に動物が流れつきます</b>。お知らせの「🐾 仲間にする」で仲間になります。肉食の動物は、おなかがすくと小さな草食動物をねらうことがあるので、<b>相性の注意</b>も見て選びましょう。', p: () => `仲間 ${alive().length}匹（3匹になったらクリア）`, ok: () => alive().length >= 3, reward: () => { G.stock.berry += 5; G.stock.fish += 5; return '🫐 +5　🐟 +5'; } },
-  { t: '柵と門でキャンプを囲もう', x: () => '「🔨 建てる」→「<b>🪵 柵</b>」は、なぞるように<b>ドラッグ</b>すると並べて置けます。柵はカニも動物も通れないので、出入り口に「<b>🚪 門</b>」をつけましょう（仲間だけ通れます）。', p: () => `柵 ${Math.min(10, countB('fence'))} / 10　門 ${Math.min(1, countB('gate'))} / 1`, ok: () => countB('fence') >= 10 && countB('gate') >= 1, hl: 'bOpen' },
-  { t: '冬にそなえよう', x: () => '冬は木の実が実らず、魚も減ります。秋のうちに<b>食べ物をためて</b>おきましょう。寒さに弱い動物は家に住ませて、たき火のそばで温めてあげてください。', p: () => `🫐+🐟 ${Math.min(40, G.stock.berry + G.stock.fish)} / 40`, ok: () => G.stock.berry + G.stock.fish >= 40 },
+  { t: '「？」を調べよう', x: () => '島のあちこちに<b>「？」マーク</b>が隠れています。探検していると見つかって、動物が調べに行きます。だれかの<b>仕事の優先度</b>で「<b>🧭 探検</b>」を<b>1</b>にすると早く見つかります。はちみつ・地図・化石など、いろいろなものが出てきます。', p: () => `🔍 発見 ${Math.min(1, G.found || 0)} / 1`, ok: () => (G.found || 0) >= 1, hl: 'pprio' },
+  { t: '柵と門でキャンプを囲もう', x: () => '「🔨 建てる」→「<b>🛡 守り</b>」→「<b>🪵 柵</b>」は、なぞるように<b>ドラッグ</b>すると並べて置けます。柵はカニも動物も通れないので、出入り口に「<b>🚪 門</b>」をつけましょう（仲間だけ通れます）。<b>🪤 トゲの罠</b>や<b>🗼 見張り台</b>も、大ガニ対策に役立ちます。', p: () => `柵 ${Math.min(10, countB('fence'))} / 10　門 ${Math.min(1, countB('gate'))} / 1`, ok: () => countB('fence') >= 10 && countB('gate') >= 1, hl: 'bOpen' },
+  { t: '部屋を作ろう', x: () => '「🔨 建てる」→「<b>🏠 住まい</b>」で、<b>🧱 壁</b>（と🚪 ドア）でまわりを囲んで、中に<b>🟫 屋根</b>をなぞってかけると「<b>部屋</b>」になります。部屋の中は気温がおだやかで、地図に「🌡18℃」と出ます。中に<b>🛏 ベッド</b>や<b>🔥 たき火</b>を置くと、さらに快適です。', p: () => G.rooms.length ? '部屋ができました！' : 'すき間があると、屋根が灰色のしま模様になります', ok: () => G.rooms.length >= 1, hl: 'bOpen' },
+  { t: '冬にそなえよう', x: () => '冬は木の実が実らず、魚も減ります。秋のうちに<b>食べ物をためて</b>おきましょう（料理にすると、いたまず長持ち）。寒さに弱い動物は、部屋や家で眠らせて、たき火のそばで温めてあげてください。', p: () => `🫐+🐟 ${Math.min(40, G.stock.berry + G.stock.fish)} / 40`, ok: () => G.stock.berry + G.stock.fish >= 40 },
   { t: 'チュートリアルクリア！🎉', x: () => 'これで島の暮らしの基本はばっちりです。ここからは自由に、動物たちと島を開拓してください。困ったら右上の「？」を見てくださいね。', next: true, last: true },
 ];
 let tutHl = null;
