@@ -180,6 +180,8 @@
   #bigToast { position: fixed; left: 50%; top: 38%; transform: translate(-50%, -50%); background: rgba(255,255,255,.97); border: 3px solid #5b4636; border-radius: 20px; padding: 14px 28px; font-family: 'Zen Maru Gothic', sans-serif; font-weight: 700; font-size: 24px; text-align: center; pointer-events: none; opacity: 0; z-index: 12; box-shadow: 0 6px 20px rgba(0,0,0,.2); max-width: 94vw; white-space: nowrap; }
   #bigToast small { white-space: normal; display: block; font-size: 13px; font-weight: 500; color: #7a6656; margin-top: 4px; font-family: 'Noto Sans JP', sans-serif; }
   #bigToast.show { animation: bigT 3.4s ease forwards; }
+  .alert.mini { padding: 4px 10px; font-size: 12px; }
+  .alert.mini button { padding: 2px 8px; font-size: 11.5px; }
   #bigToast.go { pointer-events: auto; cursor: pointer; }
   #log div.go { pointer-events: auto; cursor: pointer; }
   #log div.go::after { content: ' 📍'; font-size: 10px; opacity: .7; }
@@ -262,12 +264,13 @@
 <div id="hud"><div class="card" id="clock"></div><div class="card" id="stock"></div></div>
 <div id="speed">
   <div class="seg"><button data-s="0" title="一時停止（スペースキー）">⏸</button><button data-s="1" class="on" title="ふつうの速さ">▶</button><button data-s="2" title="2倍の速さ">▶▶</button><button data-s="4" title="4倍の速さ">▶▶▶</button></div>
-  <div class="seg"><button id="prioBtn" title="仕事の優先度（全員）">📋</button><button id="techBtn" title="島のちえ">💡</button><button id="saveBtn" title="セーブ">💾</button><button id="sndBtn" title="音の設定">🔊</button><button id="zBtn" title="動物図鑑">📖</button><button id="helpBtn" title="あそびかた">？</button></div>
+  <div class="seg"><button id="prioBtn" title="仕事の優先度（全員）">📋</button><button id="techBtn" title="島のちえ">💡</button><button id="saveBtn" title="セーブ">💾</button><button id="sndBtn" title="音と設定">🔊</button><button id="zBtn" title="動物図鑑">📖</button><button id="helpBtn" title="あそびかた">？</button></div>
 </div>
 <div id="sndPop" class="card">
-  <div class="sh"><span>🎵 音の設定</span><button id="sndClose">×</button></div>
+  <div class="sh"><span>⚙ 音と設定</span><button id="sndClose">×</button></div>
   <label><input type="checkbox" id="bgmOn"> BGM（音楽）</label><input type="range" id="bgmVol" min="0" max="100">
   <label><input type="checkbox" id="seOn"> 効果音</label><input type="range" id="seVol" min="0" max="100">
+  <label style="margin-top:6px"><input type="checkbox" id="apOn"> ⏸ 敵やできごとのとき自動で一時停止</label>
   <div class="snote">※ ブラウザの決まりで、最初に画面をさわったときから音が鳴ります</div>
 </div>
 <div id="bigToast"></div>
@@ -390,6 +393,7 @@
   <b>部屋づくり</b>：🧱壁（とドア）でまわりを囲んで、🟫屋根をかけると「部屋」になります。部屋の中は外より気温がおだやかで（冬は暖かく、夏は涼しい）、たき火を置くとさらに暖かくなります。動物たちは部屋の中で眠ったり、寒いとき・暑いときに避難したりします。部屋の気温は地図に「🌡18℃」と出ます。屋根だけで囲まれていない所は、しま模様で表示されます。<br>
   <b>木や岩を片づける</b>：木・岩・しげみをタップすると「🪓 切る予約」ができます。建てるメニューの「🪓 片づけ予約」ではなぞってまとめて予約できます。木の上に建物を置くと、自動で先に切ってから建てます。<br>
   <b>💡 島のちえ</b>：「🔥 くらし」の<b>📚 研究台</b>を建てると、「📚 研究」の仕事をする子が💡ちえを集めます（探検の発見でももらえます）。上の「💡」ボタンから、ちえを使って新しいこと（保存・薬草・水やり・石組み・新しい装備など）をおぼえられます。<br>
+  <b>⏸ 自動で一時停止</b>：大ガニ・ヘビ・行商人・新しい動物などのときは、自動で一時停止します（「🔊 音と設定」で切りかえ）。<br>
   <b>📍 お知らせから飛ぶ</b>：📍のついたお知らせをタップすると、そのできごとの場所へ画面が飛びます（動物ならその子を選びます）。<br>
   <b>🎯 指示モード</b>：動物の「ようす」タブの「🎯 指示モード」か、襲来のお知らせの「🎯 自分で指示」で、自分で動かせます。動物をタップしてから、地面をタップで移動、敵（大ガニ・ヘビ）をタップで攻撃。近くの敵には自分から反撃します。敵がいなくなると自動で終わります。<br>
   <b>⬆ 成長</b>：仕事や戦いをするほど、その仕事が上手になります（Lv1〜10、1つ上がるごとに6%ずつ速く・強く）。<br>
@@ -415,7 +419,7 @@
 <div id="draftBar"></div>
 <div id="techBox"><div class="box"><h2>💡 島のちえ　<span style="font-size:16px;color:#f9a825">💡 <span id="techPts">0</span></span></h2><p class="pnote" id="techNote"></p><div id="techList"></div><div style="margin-top:10px"><button class="btn" id="techClose">とじる</button></div></div></div>
 <div id="tradeBox"><div class="box"><h2>🛶 たぬきの行商人</h2><p class="pnote" id="tradeNote"></p><div id="tradeList"></div><div style="margin-top:10px"><button class="btn" id="tradeClose">とじる</button></div></div></div>
-<div id="craftBox"><div class="box"><h2>🎒 装備を作る</h2><p class="pnote" id="craftNote"></p><div id="craftList"></div><div class="crh">⏳ 作るのを待っている装備</div><div id="craftQ" style="padding:4px 0"></div><div class="crh">📦 倉庫にある装備</div><div id="craftStock" style="padding:4px 0"></div><div style="margin-top:10px"><button class="btn" id="craftClose">とじる</button></div></div></div>
+<div id="craftBox"><div class="box"><h2>🎒 装備を作る</h2><p class="pnote" id="craftNote"></p><div id="craftList"></div><div class="crh">⏳ 作るのを待っている装備（左から順に作ります。「⬆先に」で順番を変えられます）</div><div id="craftQ" style="padding:4px 0"></div><div class="crh">📦 倉庫にある装備</div><div id="craftStock" style="padding:4px 0"></div><div style="margin-top:10px"><button class="btn" id="craftClose">とじる</button></div></div></div>
 <div id="prioBox"><div class="box"><h2>📋 仕事の優先度</h2><p class="pnote">1がいちばん先にやる仕事、4はひまなときにやる仕事、✕はしない仕事です。数字をタップで切りかえ。★はその子の得意さです。</p><div style="overflow-x:auto"><table id="prioTbl"></table></div><div style="margin-top:10px"><button class="btn" id="prioClose">とじる</button></div></div></div>
 <div id="err"></div>
 
@@ -810,7 +814,13 @@ function makeAnimal(key, used) {
     if (traits.includes(t) || traits.some(o => o.n === t.x)) continue;
     traits.push(t);
   }
-  let name; do { name = pick(NAMES); } while (used.has(name)); used.add(name);
+  const taken = new Set(used);
+  try { for (const o of G.animals) taken.add(o.name); if (G.visitor) taken.add(G.visitor.name); } catch (e) {}
+  const free = NAMES.filter(n => !taken.has(n));
+  let name;
+  if (free.length) name = pick(free);
+  else { let k = 2; do { name = pick(NAMES) + k++; } while (taken.has(name)); }
+  used.add(name);
   const a = {
     id: nextId++, sp: key, name, traits,
     st: { str: st[0], spd: st[1], dex: st[2], hp: st[3], app: st[4] },
@@ -2021,6 +2031,7 @@ function showHerdAlert() {
   ]);
 }
 function herdRaid() {
+  autoPause('野生の群れがおそってきた');
   const h = G.herd; h.lastRaid = G.day;
   const n = Math.min(h.count, 2 + (Math.random() < .5 ? 1 : 0));
   const size = SP[h.sp].size;
@@ -2293,6 +2304,7 @@ function updateTowers(dt) {
   }
 }
 function raidAlert(text) {
+  G.raidText = text;
   makeAlert('raid', '', `<span>${text}</span><span class="small">指示：⚔ 戦える子以外もみんなで戦う ／ 🏠 戦えない子は家・部屋・キャンプで休む ／ 🎯 動物をタップして自分で動かす</span>`, [
     button('⚔ みんなで戦う', () => setRaidOrder('fight')),
     button('🏠 みんな避難', () => setRaidOrder('hide')),
@@ -2300,8 +2312,13 @@ function raidAlert(text) {
     button('🤖 おまかせ', () => setRaidOrder(null)),
   ]);
 }
+const RAID_N = { fight: '⚔ みんなで戦う', hide: '🏠 みんな避難', draft: '🎯 自分で指示', auto: '🤖 おまかせ' };
+function raidMini(k) {
+  if (!G.crabs.length) return;
+  makeAlert('raid', 'mini', `<span>${G.raidText || '⚠ 敵がきています'}　<b>${RAID_N[k]}</b></span>`, [button('指示を変える', () => raidAlert(G.raidText))]);
+}
 function setRaidOrder(o) {
-  G.raidOrder = o; G.alarm = true;
+  G.raidOrder = o; G.alarm = true; raidMini(o || 'auto');
   addLog(o === 'fight' ? '⚔ 「みんなで戦うよ！」（赤ちゃん以外の元気な子が迎えうちます）' : o === 'hide' ? '🏠 「みんな避難して！」（戦える子以外は、家・部屋・キャンプで休みます）' : '🤖 いつもどおり、それぞれの判断にまかせます');
 }
 
@@ -2454,7 +2471,7 @@ function updateSnakes(dt) {
         for (const a of G.animals) { if (a.dead || a.inHouse) continue; const d = dist(a, s); if (d < bd) { bd = d; best = a; } }
         if (best) {
           s.tgt = best; s.aggroT = 0;
-          if (!best.toldSnake || dayF() - best.toldSnake > .3) { best.toldSnake = dayF(); addLog(`🐍 ヘビが${best.name}にかみつこうとしている！`, 'bad'); }
+          if (!best.toldSnake || dayF() - best.toldSnake > .3) { best.toldSnake = dayF(); addLog(`🐍 ヘビが${best.name}にかみつこうとしている！`, 'bad'); autoPause('ヘビが出た'); }
         }
       }
     }
@@ -2486,7 +2503,7 @@ function snakeCheck(a, dt) {
   if (a.path || a.act) interrupt(a);
   wake(a);
   if (brave) {
-    if (bd > T * .8) moveToward(a, s.x, s.y, spd(a) * dt, a.walk);
+    if (bd > T * .8) chaseMove(a, s, spd(a), dt);
     else {
       a.flip = s.x < a.x;
       a.cd = (a.cd || 0) - dt;
@@ -2589,7 +2606,7 @@ function equip(a, k, quiet) {
   const gs = gearOf(a);
   if (gs[g.s]) G.gearStock[gs[g.s]] = (G.gearStock[gs[g.s]] || 0) + 1;
   G.gearStock[k]--; gs[g.s] = k;
-  if (!quiet) { addLog(`🎒 ${a.name}が${g.i}${g.n}をつけた`); se('pop'); }
+  if (!quiet) addLog(`👕 ${a.name}が${g.i}${g.n}をつけた`);
   return true;
 }
 function unequip(a, s) {
@@ -2685,7 +2702,7 @@ function renderCraft() {
     }
   }
   $('craftList').innerHTML = h;
-  $('craftQ').innerHTML = G.craftQ.length ? G.craftQ.map((o, n) => `<span class="chip">${GEAR[o.k].i}${GEAR[o.k].n}${n === 0 && o.prog ? `（${Math.min(99, Math.round(o.prog / (GEAR[o.k].work * 2.5) * 100))}%）` : ''} <button class="gq" data-op="cancel" data-n="${n}">✕</button></span>`).join('') : '<small>なし</small>';
+  $('craftQ').innerHTML = G.craftQ.length ? G.craftQ.map((o, n) => `<span class="chip">${GEAR[o.k].i}${GEAR[o.k].n}${n === 0 && o.prog ? `（${Math.min(99, Math.round(o.prog / (GEAR[o.k].work * 2.5) * 100))}%）` : ''}${n > 0 ? ` <button class="gq" data-op="qup" data-n="${n}" title="いちばん先に作る">⬆先に</button>` : ''} <button class="gq" data-op="cancel" data-n="${n}">✕</button></span>`).join('') : '<small>なし</small>';
   const st = Object.entries(G.gearStock).filter(([, v]) => v > 0);
   $('craftStock').innerHTML = st.length ? st.map(([k, v]) => `<span class="chip">${GEAR[k].i}${GEAR[k].n} ×${v}</span>`).join('') : '<small>なし（できた装備は、向いている子が自動でつけます）</small>';
   $('craftNote').textContent = hasDone('bench') ? '建築の仕事をする子が、作業台で順番に作ります。材料は注文したときに使います（✕で取り消すと全部もどります）。' : '⚠ まだ作業台がありません。「🔨 建てる」→「🔥 くらし」→「🛠 作業台」を建てると作りはじめます。';
@@ -2709,6 +2726,7 @@ document.addEventListener('click', e => {
   const op = b.dataset.op, a = G.selected;
   if (op === 'make') orderGear(b.dataset.k);
   else if (op === 'cancel') cancelOrder(+b.dataset.n);
+  else if (op === 'qup') { const n = +b.dataset.n; const [o] = G.craftQ.splice(n, 1); if (o) G.craftQ.unshift(o); se('pop'); renderCraft(); }
   else if (op === 'craft') openCraft();
   else if (op === 'on' && a) { equip(a, b.dataset.k); renderGear(a); renderPrio(a); }
   else if (op === 'off' && a) { unequip(a, b.dataset.s); se('pop'); renderGear(a); renderPrio(a); }
@@ -2805,7 +2823,7 @@ function undraftAll() {
 function draftAllFighters() {
   const list = alive().filter(a => !a.baby && a.hp > a.maxHp * .3);
   for (const a of list) setDraft(a, true, true);
-  G.raidOrder = 'fight'; G.alarm = true;
+  G.raidOrder = 'fight'; G.alarm = true; raidMini('draft');
   addLog('🎯 指示モード：動物をタップしてから、地面をタップで移動・敵をタップで攻撃。近くの敵には自分から反撃します', 'good');
   const f = list.slice().sort((p, q) => eff(q, 'fight') - eff(p, 'fight'))[0];
   if (f) { select(f); cam.x = f.x; cam.y = f.y; }
@@ -2876,7 +2894,7 @@ function updateDraft(a, dt) {
     if (e && a.path) e = null;   // 移動中は止まらない
   }
   if (e) {
-    if (dist(a, e) > T * .85) { a.path = null; moveToward(a, e.x, e.y, spd(a) * 1.1 * dt, a.walk); }
+    if (dist(a, e) > T * .85) { a.path = null; chaseMove(a, e, spd(a) * 1.1, dt); }
     else { a.cd = (a.cd || 0) - dt; if (a.cd <= 0) { a.cd = 1; hitEnemy(a, e); a.cd = 1; } }
     return;
   }
@@ -2918,6 +2936,7 @@ function spawnTrader() {
   G.lastTrader = G.day;
   reveal(i % MW, Math.floor(i / MW), 4);
   addLog('🛶 たぬきの行商人が船でやってきた！ 夕方までいます', 'good');
+  autoPause('行商人が来た');
   bigToast('🛶 たぬきの行商人がやってきた！', 'あまった物を、めずらしい物と交換できます');
   makeAlert('trader', 'friend', '<span>🛶 たぬきの行商人「いらっしゃい！ 夕方までここにいるよ」</span><span class="small">木や食べ物を、めずらしい装備・種・薬草と交換できます</span>', [
     button('🛒 品物を見る', openTrade),
@@ -3088,8 +3107,15 @@ function damage(a, amt, src) {
   }
   if (a.hp <= 0) die(a, src);
 }
+// 大事なできごとで自動で一時停止（設定で切りかえ）
+function autoPause(why) {
+  if (params.get('auto') || typeof SND === 'undefined' || SND.cfg.autoPause === false || !G.speed || state !== 'play') return;
+  const b = document.querySelector('#speed button[data-s="0"]'); if (b) b.click();
+  $('pauseTag').textContent = '⏸ 一時停止中' + (why ? `（${why}）` : '');
+}
 function die(a, cause) {
   wake(a); setHome(a, null); returnGear(a);
+  autoPause(`${a.name}が亡くなった`);
   diary(a, `${cause}で天国へ旅立った`);
   for (const o of alive()) if (o !== a && getRel(o, a) >= 50) addMem(o, `${a.name}が死んでしまった`, -15, 3);
   a.dead = true; a.hp = 0; interrupt(a); a.carry = null;
@@ -3106,6 +3132,7 @@ function die(a, cause) {
 
 // ---------- 追いかけっこ（肉食動物が空腹のとき） ----------
 function startChase(h, p) {
+  autoPause(`${h.name}が${p.name}を追いかけている`);
   interrupt(h); interrupt(p); wake(h); wake(p);
   h.chase = { p, t: 14 }; p.fleeFrom = h; p.fleeT = 0;
   addRel(h, p, -15);
@@ -3214,6 +3241,7 @@ function spawnRaid() {
     G.crabs.push({ x: (i0 % MW + .5) * T + rand(-20, 20), y: (Math.floor(i0 / MW) + .5) * T + rand(-20, 20), hp, maxHp: hp, dmg: Math.min(14, 3 + L * .45), sp: 1.4 * T, cd: 0, path: null, repath: 0, phase: Math.random() * 6, flip: false });
   }
   addLog(`🦀 大ガニが${n}匹、浜に上陸した！`, 'bad');
+  autoPause('大ガニが上陸');
   bigToast(`🦀 大ガニが${n}匹やってきた！`, `島の豊かさ💰${G.wealth}に合わせた強さです`);
   raidAlert(`🦀 大ガニが${n}匹上陸しています！`);
   const ear = alive().find(a => SP[a.sp].alarm);
@@ -3327,6 +3355,29 @@ function combatCheck(a, dt) {
   }
   return false;
 }
+// 敵に近づく：まっすぐ行けないときは道をさがして回りこむ（行けないときは無理に押さない）
+function chaseMove(a, tgt, sp, dt) {
+  if (a.cpTgt !== tgt) { a.cpTgt = tgt; a.cpath = null; a.cpT = 0; }
+  const near = dist(a, tgt) < 1.5 * T;
+  if (!a.cpath || near) {
+    const ox = a.x, oy = a.y;
+    moveToward(a, tgt.x, tgt.y, sp * dt, a.walk);
+    if (near || Math.hypot(a.x - ox, a.y - oy) > sp * dt * .6) { a.cpath = null; return; }
+    a.x = ox; a.y = oy; a.moving = false;   // 壁などでまっすぐ進めない
+  }
+  a.cpT = (a.cpT || 0) - dt;
+  if (!a.cpath || a.cpT <= 0) {
+    a.cpT = .8;
+    const [sx, sy] = tileOf(a), gx = Math.floor(tgt.x / T), gy = Math.floor(tgt.y / T);
+    a.cpath = bfs(sx, sy, a.walk, (x, y) => Math.abs(x - gx) <= 1 && Math.abs(y - gy) <= 1, 8000) || [];
+  }
+  while (a.cpath.length) {
+    const i = a.cpath[0], cx = (i % MW + .5) * T, cy = (Math.floor(i / MW) + .5) * T;
+    if (Math.hypot(cx - a.x, cy - a.y) < 4) { a.cpath.shift(); continue; }
+    moveToward(a, cx, cy, sp * dt, a.walk); return;
+  }
+  // 道がない（壁の外にいる）ときは、その場で待つ
+}
 function updateFight(a, dt) {
   let c = a.fight;
   if (!G.crabs.includes(c)) {
@@ -3336,7 +3387,7 @@ function updateFight(a, dt) {
     c = a.fight;
   }
   if (a.hp < a.maxHp * .25 && !hasT(a, 'brave')) { a.fight = null; addLog(`${a.name}はケガがひどくて下がった`); goSleep(a); return; }
-  if (dist(a, c) > T * .85) moveToward(a, c.x, c.y, spd(a) * 1.1 * dt, a.walk);
+  if (dist(a, c) > T * .85) chaseMove(a, c, spd(a) * 1.1, dt);
   else {
     a.flip = c.x < a.x;
     a.cd = (a.cd || 0) - dt;
@@ -4349,7 +4400,11 @@ function drawTeam(t) {
   for (const m of teamCv) {
     const g = m.c.getContext('2d');
     g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, 96, 80);
-    if (m.a.dead) { if (m.a.left) { g.font = '30px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('🎒', 48, 46); } else graveC(g, 48, 70); continue; }
+    if (m.a.dead) {   // 亡くなった子・家出した子も、その子の絵をうすく表示する
+      g.save(); g.globalAlpha = .4; try { g.filter = 'grayscale(1)'; } catch (e) {}
+      drawAnimal(g, m.a.look, 48, 74, 1.55 * (m.a.baby ? .7 : 1), 0, { phase: m.a.phase, sleep: !m.a.left });
+      g.restore(); continue;
+    }
     drawAnimal(g, m.a.look, 48, 74, 1.55 * (m.a.baby ? .7 : 1), t, { mood: moodOf(m.a), phase: m.a.phase, sleep: m.a.sleeping, gear: m.a.gear });
     m.bar.style.width = m.a.hunger + '%';
     m.bar.style.background = m.a.hunger < 25 ? '#e53935' : '#f0a04b';
@@ -4556,6 +4611,7 @@ miniCv.addEventListener('pointerdown', e => {
   cam.x = (e.clientX - r.left) / r.width * MW * T; cam.y = (e.clientY - r.top) / r.height * MH * T; cam.follow = null;
 });
 document.querySelectorAll('#speed button[data-s]').forEach(b => b.onclick = () => {
+  $('pauseTag').textContent = '⏸ 一時停止中';
   G.speed = +b.dataset.s;
   document.querySelectorAll('#speed button[data-s]').forEach(x => x.classList.toggle('on', x === b));
 });
@@ -4605,6 +4661,7 @@ function spawnVisitor(spKey, at) {
   alertsEl.appendChild(el);
   G.visitorEl = el;
   addLog(`🐾 浜辺に${v.name}（${sp.n}）が流れついた！`, 'good');
+  autoPause('新しい動物が流れついた');
   if (G.autoAccept) acceptVisitor();   // 確認用
 }
 function acceptVisitor() {
@@ -5105,7 +5162,7 @@ function se(name) {
   }
 }
 // お知らせの文の頭の絵文字で、効果音を決める
-const LOG_SE = { '🐍': 'alarm', '☠': 'bad', '🪓': 'done', '🔍': 'friend', '🏆': 'fanfare', '🗼': 'alarm', '🪤': 'pop', '♨': 'friend', '🦀': 'alarm', '⚠': 'bad', '💀': 'sad', '🎒': 'sad', '👶': 'baby', '🎉': 'friend', '🐾': 'friend', '🏠': 'done', '🔨': 'done', '📦': 'done', '💎': 'done', '🏺': 'done', '⚔': 'hit', '💥': 'hit', '🩹': 'bad', '🤧': 'bad', '😠': 'bad', '😤': 'bad', '💢': 'bad', '🥶': 'bad', '🥵': 'bad', '😡': 'bad', '💕': 'friend', '💊': 'done', '✨': 'friend', '🌙': 'night', '👑': 'fanfare', '🎁': 'friend', '🌈': 'friend', '🌊': 'pop', '🌿': 'pop', '🍽': 'eat', '💾': 'done', '📘': 'done', '🛡': 'hit', '🕳': 'friend', '🦇': 'bad', '🌀': 'alarm', '☀': 'morning', '☁': 'morning', '☔': 'morning', '❄': 'morning', '🌸': 'season', '🌻': 'season', '🍁': 'season', '⛄': 'season' };
+const LOG_SE = { '🛠': 'done', '👕': 'pop', '🛒': 'done', '⬆': 'friend', '💡': 'friend', '🛶': 'friend', '🎯': 'pop', '✋': 'pop', '🐍': 'alarm', '☠': 'bad', '🪓': 'done', '🔍': 'friend', '🏆': 'fanfare', '🗼': 'alarm', '🪤': 'pop', '♨': 'friend', '🦀': 'alarm', '⚠': 'bad', '💀': 'sad', '🎒': 'sad', '👶': 'baby', '🎉': 'friend', '🐾': 'friend', '🏠': 'done', '🔨': 'done', '📦': 'done', '💎': 'done', '🏺': 'done', '⚔': 'hit', '💥': 'hit', '🩹': 'bad', '🤧': 'bad', '😠': 'bad', '😤': 'bad', '💢': 'bad', '🥶': 'bad', '🥵': 'bad', '😡': 'bad', '💕': 'friend', '💊': 'done', '✨': 'friend', '🌙': 'night', '👑': 'fanfare', '🎁': 'friend', '🌈': 'friend', '🌊': 'pop', '🌿': 'pop', '🍽': 'eat', '💾': 'done', '📘': 'done', '🛡': 'hit', '🕳': 'friend', '🦇': 'bad', '🌀': 'alarm', '☀': 'morning', '☁': 'morning', '☔': 'morning', '❄': 'morning', '🌸': 'season', '🌻': 'season', '🍁': 'season', '⛄': 'season' };
 function logSound(text) { const k = LOG_SE[[...text][0]]; if (k) se(k); }
 
 // 最初に画面をさわったときに音を出せるようにする（ブラウザの決まり）
@@ -5151,6 +5208,8 @@ function statusIcon(a) {
 $('bgmOn').checked = SND.cfg.bgm; $('seOn').checked = SND.cfg.se;
 $('bgmVol').value = SND.cfg.bv; $('seVol').value = SND.cfg.sv;
 $('sndBtn').textContent = SND.cfg.bgm || SND.cfg.se ? '🔊' : '🔇';
+$('apOn').checked = SND.cfg.autoPause !== false;
+$('apOn').onchange = e => { SND.cfg.autoPause = e.target.checked; sndSave(); };
 $('sndBtn').onclick = () => { const p = $('sndPop'); p.style.display = p.style.display === 'block' ? 'none' : 'block'; };
 $('bgmOn').onchange = e => { SND.cfg.bgm = e.target.checked; sndSave(); sndApply(); };
 $('seOn').onchange = e => { SND.cfg.se = e.target.checked; sndSave(); sndApply(); };
@@ -5248,6 +5307,12 @@ if (params.get('auto')) {
   if (params.get('geartest')) { const el = document.getElementById('err'); el.style.display = 'block'; el.textContent = 'crafted ' + (G.crafted || 0) + ' | queue ' + G.craftQ.map(o => o.k + ':' + Math.round(o.prog)).join(',') + ' | stock ' + JSON.stringify(G.gearStock) + ' | ' + G.animals.map(a => a.name + ' ' + JSON.stringify(a.gear || {}) + ' fight' + eff(a, 'fight').toFixed(2)).join(' / '); }
   if (params.get('opencraft')) openCraft();
   if (params.get('opentech')) openTech();
+  if (params.get('killtest')) { die(alive()[0], 'テスト'); }
+  if (params.get('walltest')) {
+    G.time = 21 / 24; G.day = 3;
+    for (let dy = -6; dy <= 6; dy++) for (let dx = -6; dx <= 6; dx++) { if (Math.max(Math.abs(dx), Math.abs(dy)) !== 6) continue; const i = (G.cy + dy) * MW + G.cx + dx; if (ter[i] < 2) continue; obj[i] = null; objChanged(i); G.stock.wood = 999; const t = (dx === 0 && dy === 6) ? 'door' : 'wall'; if (canPlace(i, t)) { placeBuild(t, i, true); completeBuild(G.builds.get(i), alive()[0]); } }
+    spawnRaid(); setRaidOrder('fight');
+  }
   if (params.get('techtest')) { const el = document.getElementById('err'); el.style.display = 'block'; el.textContent = 'chie ' + (G.chie || 0).toFixed(1) + ' | tech ' + Object.keys(G.tech).join(',') + ' | ' + alive().map(a => a.name + ':' + a.task + ' study' + eff(a, 'study').toFixed(2) + ' xp' + JSON.stringify(a.xp || {})).join(' / '); }
   if (params.get('drafttest') || params.get('tradertest') || params.get('xptest')) { const el = document.getElementById('err'); el.style.display = 'block'; el.textContent = 'crabs ' + (G.dStart || 0) + ' -> ' + G.crabs.length + ' | trader ' + (G.trader ? G.trader.offers.length + ' offers' : 'none') + ' | ' + G.animals.map(a => a.name + (a.draft ? '[D]' : '') + (a.dead ? '[DEAD]' : '') + ' ' + JSON.stringify(a.xp || {}).replace(/\.\d+/g, '') + ' ' + PRIO_JOBS.concat(['fight']).map(j => lvOf(a, j)).join('')).join(' / '); }
   if (params.get('geartab')) { select(alive()[0]); setPTab('gear'); }
