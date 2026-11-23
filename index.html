@@ -380,7 +380,7 @@
   <b>なかよし度</b>：近くで過ごすと上がります。おなかをすかせた肉食動物は、仲の悪い小さな草食動物を追いかけることがあります。警告が出たら「魚をあげる」で止められます。<br>
   <b>夜の大ガニ</b>：2日目の夜から、浜辺に大ガニが上陸してきます。戦いに強い動物が迎えうちます。<br>
   <b>💰 島の豊かさ</b>：持っている物・建てた物・仲間の数で決まります（画面上の💰）。<b>豊かになるほど、大ガニ・野生の群れ・ヘビが強く、多くなります</b>。日にちがたつだけでは強くなりません。<br>
-  <b>ごきげん</b>：おなか・寒さ・家・仲よし・おいしい料理などで上がり下がりします。ごきげんだと仕事が速く、不機嫌が続くとサボる・ケンカする・家出することも。<br>
+  <b>ごきげん</b>：おなか・寒さ・家・仲よし・おいしい料理などで上がり下がりします。ごきげんだと仕事が速く、不機嫌が続くとサボる・ケンカする・暴れる・ぼーっとする（放心）・やけ食いすることも。「もう限界」のお知らせが出たあとも不機嫌が続くと、家出してしまいます。<br>
   <b>赤ちゃん</b>：同じ種類で大の仲よし（なかよし度80以上）の2匹に、赤ちゃんが生まれることがあります。親の能力を受けつぎ、3日で大人になります。<br>
   <b>ケガと病気</b>：ケガや「かぜ」をすると仕事がおそくなります。薬草を集めておくと「看病」担当が手当てしてくれます。<br>
   <b>畑と料理</b>：🥕畑で野菜が育ちます（冬は育ちません）。🍳かまどがあると「料理」担当が料理を作ります。料理はだれでも食べられて、ごきげんも上がります。夏は生の食べ物がいたみやすいので、料理にしておくと安心です。<br>
@@ -1271,7 +1271,8 @@ function think(a) {
   if (a.heat > 45) return goCool(a);
   if (isNight() || a.energy < 12 || a.hp < a.maxHp * .35) return goSleep(a);
   if (a.baby) return babyPlay(a);
-  if (a.sulkT > 0) { a.idle = 3; return; }
+  if (a.sulkT > 0 || a.dazeT > 0) { a.idle = 3; return; }
+  if (a.rageT > 0) { wander(a); return; }
   return goWork(a);
 }
 // 寒いときは火にあたりに行く（夜で家があれば家へ）
@@ -1693,12 +1694,42 @@ function moodTick(a) {   // 1秒ごと
   if (a.mood < 25 && !a.toldMood) { a.toldMood = true; addLog(`😠 ${a.name}がすねている…（ごきげん ${Math.round(a.mood)}）`, 'bad'); }
   else if (a.mood > 40) a.toldMood = false;
   if (a.sulkT > 0) a.sulkT--;
+  if (a.rageT > 0) a.rageT--;
+  if (a.dazeT > 0) a.dazeT--;
+  if (a.mood > 45) { if (a.breaks) a.breaks = 0; a.toldLimit = false; }
+  if (a.sulkT > 0 || a.rageT > 0 || a.dazeT > 0) return;
   if (a.mood >= 20 || a.sleeping || a.inHouse || a.chase || a.fleeFrom || a.fight || a.quest || a.baby) return;
   if (Math.random() > .004) return;
   // 不機嫌が続くと…
   const r = Math.random();
-  if (a.mood < 10 && r < .25 && alive().length > 1) { leaveIsland(a); return; }
-  if (r < .6) {
+  // 家出は「限界」が何度も続いたときだけ（先にお知らせが出ます）
+  if ((a.breaks || 0) >= 3 && a.mood < 8 && r < .3 && alive().length > 1) { leaveIsland(a); return; }
+  a.breaks = (a.breaks || 0) + 1;
+  if (a.breaks >= 2 && !a.toldLimit) {
+    a.toldLimit = true;
+    addLog(`⚠ ${a.name}がもう限界みたい…このままだと家出してしまうかも（ごきげんを上げてあげて）`, 'bad');
+  }
+  if (r < .2) {   // 暴れる
+    interrupt(a); a.rageT = 25;
+    const ks = ['berry', 'fish', 'wood'].filter(k => (G.stock[k] || 0) > 5);
+    let lost = '';
+    if (ks.length) { const k = pick(ks), n = Math.min(30, Math.max(3, Math.round(G.stock[k] * .1))); G.stock[k] -= n; lost = `（${({ berry: '木の実', fish: '魚', wood: '木' })[k]} −${n}）`; }
+    addLog(`💥 ${a.name}が大暴れ！ 倉庫をひっくり返した${lost}`, 'bad'); diary(a, 'いらいらして大暴れした');
+    for (const b of alive()) { if (b === a || b.sleeping || b.inHouse || dist(a, b) > 4 * T) continue; addRel(b, a, -6); addMem(b, `${a.name}が暴れてこわかった`, -4, 1); }
+    autoPause(`${a.name}が暴れている`);
+    return;
+  }
+  if (r < .4) {   // 放心
+    interrupt(a); a.dazeT = 60; a.idle = 3;
+    addLog(`😶 ${a.name}がぼーっとして、うごかなくなった…（放心）`, 'bad'); diary(a, 'なにもする気が起きなかった');
+    return;
+  }
+  if (r < .5 && G.stock.berry > 5) {   // やけ食い
+    const n = Math.min(20, G.stock.berry); G.stock.berry -= n; a.hunger = 100;
+    addLog(`🍓 ${a.name}がやけ食いした！（木の実 −${n}）`, 'bad'); diary(a, 'やけ食いした');
+    return;
+  }
+  if (r < .8) {
     interrupt(a); a.sulkT = 40; a.idle = 2;
     addLog(`😤 ${a.name}が「もうやだ！」と仕事をサボりはじめた`, 'bad'); diary(a, '仕事がいやになってサボった');
   } else {
@@ -4031,6 +4062,8 @@ function bubbleOf(a) {
   if ((a.cold || 0) > 40) return ['さむい…', false, '#1e88e5'];
   if ((a.heat || 0) > 40) return ['あつい…', false, '#e64a19'];
   if (a.quest) return ['⚔ 王さま、かくご！', false, '#c0392b'];
+  if (a.rageT > 0) return ['ムキーッ！', false, '#c62828'];
+  if (a.dazeT > 0) return ['……', false, '#78909c'];
   if (a.sulkT > 0) return ['もうやだ…', false, '#8e24aa'];
   if (a.poison && !a.sleeping) return ['ふらふら…', false, '#6a1b9a'];
   if (a.sick && !a.sleeping) return ['ゴホゴホ…', false];
@@ -4305,6 +4338,8 @@ function doingText(a) {
   if (a.dead) return '💀 天国にいます';
   if (a.draft) return a.dTgt ? '🎯 指示モード：敵をねらっている' : a.path ? '🎯 指示モード：移動中' : '🎯 指示モード：待機中（地面をタップで移動・敵をタップで攻撃）';
   if (a.quest) return '⚔ カニの王さまと戦っている';
+  if (a.rageT > 0) return '💥 いらいらして暴れている';
+  if (a.dazeT > 0 && !a.sleeping) return '😶 ぼーっとしている（放心）';
   if (a.sulkT > 0 && !a.sleeping) return '😤 すねてサボっている';
   if (a.chase) return `⚠ ${a.chase.p.name}を追いかけている！`;
   if (a.fleeFrom) return `⚠ ${a.fleeFrom.name}から逃げている！`;
@@ -4517,7 +4552,7 @@ function setBuildMode(m) {
   if (buildMode) $('bHint').textContent = BHINT[buildMode];
   $('build').classList.toggle('picked', !!buildMode);
   if (buildMode) {
-    const nm = buildMode === 'cut' ? '🪓 片づけ予約：木や岩をタップ（なぞると連続）' : buildMode === 'remove' ? '🧹 こわす：こわしたいものをタップ（なぞると連続）' : buildMode === 'roof' ? '🟫 屋根：かけたい場所をなぞる' : `${ICONB[buildMode] || ''} ${BINFO[buildMode].n}：置く場所をタップ`;
+    const nm = buildMode === 'cut' ? '🪓 片づけ予約：木や岩をタップ（なぞると連続）' : buildMode === 'remove' ? '🧹 こわす：こわしたいものをタップ（なぞると連続）' : buildMode === 'roof' ? '🟫 屋根：かけたい場所をなぞる' : buildMode === 'camp' ? '🏕 引っ越し：緑の場所をタップ' : `${ICONB[buildMode] || ''} ${(BINFO[buildMode] || { n: buildMode }).n}：置く場所をタップ`;
     $('bCurTxt').textContent = nm;
   }
   if (!buildMode) hoverI = -1;
@@ -5252,7 +5287,7 @@ function se(name) {
   }
 }
 // お知らせの文の頭の絵文字で、効果音を決める
-const LOG_SE = { '🛠': 'done', '👕': 'pop', '🛒': 'done', '⬆': 'friend', '💡': 'friend', '🛶': 'friend', '🎯': 'pop', '✋': 'pop', '🐍': 'alarm', '☠': 'bad', '🪓': 'done', '🔍': 'friend', '🏆': 'fanfare', '🗼': 'alarm', '🪤': 'pop', '♨': 'friend', '🦀': 'alarm', '⚠': 'bad', '💀': 'sad', '🎒': 'sad', '👶': 'baby', '🎉': 'friend', '🐾': 'friend', '🏠': 'done', '🔨': 'done', '📦': 'done', '💎': 'done', '🏺': 'done', '⚔': 'hit', '💥': 'hit', '🩹': 'bad', '🤧': 'bad', '😠': 'bad', '😤': 'bad', '💢': 'bad', '🥶': 'bad', '🥵': 'bad', '😡': 'bad', '💕': 'friend', '💊': 'done', '✨': 'friend', '🌙': 'night', '👑': 'fanfare', '🎁': 'friend', '🌈': 'friend', '🌊': 'pop', '🌿': 'pop', '🍽': 'eat', '💾': 'done', '📘': 'done', '🛡': 'hit', '🕳': 'friend', '🦇': 'bad', '🌀': 'alarm', '☀': 'morning', '☁': 'morning', '☔': 'morning', '❄': 'morning', '🌸': 'season', '🌻': 'season', '🍁': 'season', '⛄': 'season' };
+const LOG_SE = { '💥': 'alarm', '😶': 'sad', '🛠': 'done', '👕': 'pop', '🛒': 'done', '⬆': 'friend', '💡': 'friend', '🛶': 'friend', '🎯': 'pop', '✋': 'pop', '🐍': 'alarm', '☠': 'bad', '🪓': 'done', '🔍': 'friend', '🏆': 'fanfare', '🗼': 'alarm', '🪤': 'pop', '♨': 'friend', '🦀': 'alarm', '⚠': 'bad', '💀': 'sad', '🎒': 'sad', '👶': 'baby', '🎉': 'friend', '🐾': 'friend', '🏠': 'done', '🔨': 'done', '📦': 'done', '💎': 'done', '🏺': 'done', '⚔': 'hit', '💥': 'hit', '🩹': 'bad', '🤧': 'bad', '😠': 'bad', '😤': 'bad', '💢': 'bad', '🥶': 'bad', '🥵': 'bad', '😡': 'bad', '💕': 'friend', '💊': 'done', '✨': 'friend', '🌙': 'night', '👑': 'fanfare', '🎁': 'friend', '🌈': 'friend', '🌊': 'pop', '🌿': 'pop', '🍽': 'eat', '💾': 'done', '📘': 'done', '🛡': 'hit', '🕳': 'friend', '🦇': 'bad', '🌀': 'alarm', '☀': 'morning', '☁': 'morning', '☔': 'morning', '❄': 'morning', '🌸': 'season', '🌻': 'season', '🍁': 'season', '⛄': 'season' };
 function logSound(text) { const k = LOG_SE[[...text][0]]; if (k) se(k); }
 
 // 最初に画面をさわったときに音を出せるようにする（ブラウザの決まり）
@@ -5290,6 +5325,8 @@ function statusIcon(a) {
   if (a.hunger < 25) return '🍽';
   if ((a.cold || 0) > 40) return '🥶';
   if ((a.heat || 0) > 40) return '🥵';
+  if (a.rageT > 0) return '💥';
+  if (a.dazeT > 0) return '😶';
   if (a.sulkT > 0) return '😤';
   if (a.sleeping) return '💤';
   return '';
@@ -5384,6 +5421,7 @@ if (params.get('auto')) {
     for (const k of ['spear', 'shield', 'axe', 'rod', 'scarf', 'flower']) orderGear(k);
     if (params.get('geartest') === '2') { const gs = [['fang', 'crabshell', 'compass', 'furcoat', 'shellcrown'], ['kingclaw', 'stonearmor', 'pick', 'strawhat', 'ribbon']]; alive().slice(0, 2).forEach((x, n) => gs[n].forEach(k => { G.gearStock[k] = (G.gearStock[k] || 0) + 1; equip(x, k, true); })); }
   }
+  if (params.get('breaktest')) { G.bLog = []; const ol = addLog; addLog = (t, k) => { if (/^(💥|😶|🍓|🎒|⚠|😤|💢)/.test(t)) G.bLog.push(t.slice(0, 2)); return ol(t, k); }; for (const x of alive()) addMem(x, 'テスト', -70, 99); }
   if (params.get('snaketest')) { for (let k = 0; k < 2; k++) { const x = (G.cx + 4 + k) * T, y = (G.cy + 4) * T; G.snakes.push({ x, y, hx: x, hy: y, hp: 32, maxHp: 32, cd: 0, phase: k, flip: false, col: '#7cb342', wt: 0, tgt: null, aggroT: 0, rest: 0 }); } }
   const sim = +params.get('sim') || 0;
   for (let k = 0; k < sim * 10; k++) update(.1);
@@ -5397,6 +5435,8 @@ if (params.get('auto')) {
   if (params.get('geartest')) { const el = document.getElementById('err'); el.style.display = 'block'; el.textContent = 'crafted ' + (G.crafted || 0) + ' | queue ' + G.craftQ.map(o => o.k + ':' + Math.round(o.prog)).join(',') + ' | stock ' + JSON.stringify(G.gearStock) + ' | ' + G.animals.map(a => a.name + ' ' + JSON.stringify(a.gear || {}) + ' fight' + eff(a, 'fight').toFixed(2)).join(' / '); }
   if (params.get('opencraft')) openCraft();
   if (params.get('opentech')) openTech();
+  if (params.get('breaktest')) { const el = document.getElementById('err'); el.style.display = 'block'; const cnt = {}; for (const t of G.bLog) cnt[t] = (cnt[t] || 0) + 1; el.textContent = 'day ' + G.day + ' events ' + JSON.stringify(cnt) + ' | ' + G.animals.map(a => a.name + (a.left ? '(家出)' : '') + ' mood' + Math.round(a.mood) + ' br' + (a.breaks || 0)).join(' / '); }
+  if (params.get('campmode')) { $('bOpen').click(); setBuildMode('camp'); }
   if (params.get('killtest')) { die(alive()[0], 'テスト'); }
   if (params.get('camptest')) { let t = -1; bfs(G.cx, G.cy, landWalk, (x, y, i, dd) => { if (t < 0 && dd >= 14 && canCamp(i)) t = i; return false; }, 1e9, 40); G.campFrom = G.cx + ',' + G.cy; if (t >= 0) moveCamp(t); G.campTo = G.cx + ',' + G.cy; }
   if (params.get('camptest')) { const el = document.getElementById('err'); el.style.display = 'block'; el.textContent = 'camp ' + G.campFrom + ' -> ' + G.campTo + ' | stock ' + JSON.stringify(G.stock) + ' | ' + alive().map(a => a.name + ':' + a.task + ' d' + Math.round(dist(a, campPos()) / T)).join(' / '); }
