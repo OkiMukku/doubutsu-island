@@ -453,6 +453,7 @@
   <b>⬆ 成長</b>：仕事や戦いをするほど、その仕事が上手になります（Lv1〜10、1つ上がるごとに6%ずつ速く・強く）。<br>
   <b>🛶 たぬきの行商人</b>：ときどき船でやってきて、夕方まで浜辺にいます。タップすると、木や食べ物をめずらしい装備・種・薬草と交換できます。<br>
   <b>🎒 装備</b>：「🔥 くらし」の<b>🛠 作業台</b>をタップ →「🎒 装備を作る」で、武器・よろい・道具・服・おしゃれを作れます。できた装備は向いている子が自動でつけます。動物の「装備」タブでつけかえもできます。探検・宝箱・洞くつ・カニの王さまから、めずらしい装備が見つかることも。<br>
+  <b>🏴‍☠️ 海賊</b>：4日目をすぎると、ときどき昼間に海賊船がやってきます（1時間前に「沖に黒い帆の船が見える」とお知らせ）。海賊ダコは倉庫の物をぬすんで船へにげようとするので、追いかけてやっつけると取り返せます。たおすと宝もの（木・石・薬草・めずらしい装備など）を落とすことも。夜の大ガニも海賊のかっこうをしています。<br>
   <b>野生のヘビ</b>：島のあちこちにヘビがうろうろしています。近づくとかみついてきて、☠毒にやられることも（薬草で看病すると治ります）。力の強い子はやっつけます。<br>
   <b>こわす・取り消す</b>：建物や屋根をタップすると「解体する／取り消す」が出ます。「🧹こわす」モードでは、なぞって連続でこわせます。<br>
   <b>建てる</b>：右下の「🔨 建てる」から、柵・門・家を置けます。材料は置いたときに使います。置いた場所へ「建築」担当の動物が行って建てます。<br>
@@ -655,7 +656,7 @@ BINFO.flowerbed = { n: '花だん', code: 16, cost: { wood: 2 }, work: 2, hp: 20
 BINFO.path = { n: '小道', code: 17, cost: { stone: 1 }, work: 1, hp: 60 };
 BINFO.lantern = { n: 'ちょうちん', code: 18, cost: { wood: 3, stone: 1 }, work: 3, hp: 25, deco: 1 };
 BINFO.statue = { n: '石の像', code: 19, cost: { stone: 12 }, work: 10, hp: 150, deco: 3 };
-const RES_N = { wood: '木', stone: '石', berry: '木の実', fish: '魚', herb: '薬草' };
+const RES_N = { wood: '木', stone: '石', berry: '木の実', fish: '魚', herb: '薬草', veg: '野菜', meal: '料理' };
 // 料理・看病の得意な動物
 const COOK_SK = { tanuki: 1.3, pig: 1.2, cat: 1.1, bear: .8, penguin: .8 };
 const DOC_SK = { dog: 1.3, rabbit: 1.2, sheep: 1.2, panda: 1.1, turtle: 1.2, capybara: 1.2 };
@@ -1225,6 +1226,7 @@ function logTarget(text) {
   let best = null, bi = 1e9;
   for (const a of G.animals) { const k = text.indexOf(a.name); if (k >= 0 && k < bi) { bi = k; best = a; } }
   if (G.visitor && G.visitor.name) { const k = text.indexOf(G.visitor.name); if (k >= 0 && k < bi) { bi = k; best = G.visitor; } }
+  if (/海賊/.test(text) && G.crabs.some(k => k.kind === 'pirate')) { const ps = G.crabs.filter(k => k.kind === 'pirate'); return mk(ps.find(k => k.loot) || ps[0]); }
   if (/🦀|大ガニ|群れがおそって|おそってきた/.test(text) && G.crabs.length && (!best || /上陸|やってきた|おそってきた/.test(text))) {
     let c = G.crabs[0], bd = 1e9; const cp = campPos();
     for (const k of G.crabs) { const d = dist(k, cp); if (d < bd) { bd = d; c = k; } }
@@ -1236,6 +1238,7 @@ function logTarget(text) {
     return { e: best, x: best.x, y: best.y, a: G.animals.includes(best) ? best : null };
   }
   if (/🐍|ヘビ/.test(text) && G.snakes && G.snakes.length) return mk(G.snakes[0]);
+  if (/海賊/.test(text)) { const ps = G.crabs.filter(k => k.kind === 'pirate'); if (ps.length) { const lo = ps.find(k => k.loot) || ps[0]; return mk(lo); } if (G.pship) return mk(G.pship); }
   return null;
 }
 function jumpTo(tg) {
@@ -2012,7 +2015,7 @@ function cookStep(a) {
 
 // ---------- 1時間ごと（食べ物がいたむ・嵐・建物の修理） ----------
 function hourly() {
-  calcWealth(); traderHourly();
+  calcWealth(); traderHourly(); pirateHourly();
   if (hour() >= 12) removeAlert('news');
   const s = seasonIdx();
   const rate = [.003, .008, .003, 0][s];
@@ -3377,6 +3380,132 @@ function crabHitBuild(c, i, dt) {
   fx((i % MW + .5) * T, (Math.floor(i / MW) + .3) * T, 'ガリッ', '#8a5a3b');
   if (b.hp <= 0) destroyBuild(i, '大ガニ');
 }
+// ---------- 海賊（昼間に海賊船でやってきて、倉庫の物をぬすむ） ----------
+function spawnPirates() {
+  if (G.pship || G.over) return;
+  const L = calcWealth() / 100;
+  const cands = [];
+  bfs(G.cx, G.cy, landWalk, (x, y, i, d) => { if (d >= 16 && ter[i] === 2 && isShore(x, y, i)) cands.push(i); return false; }, 1e9, 40);
+  if (!cands.length) bfs(G.cx, G.cy, landWalk, (x, y, i, d) => { if (d >= 10 && cands.length < 400 && isShore(x, y, i)) cands.push(i); return false; }, 1e9, 120);
+  if (!cands.length) return;
+  const i0 = pick(cands), x0 = i0 % MW, y0 = Math.floor(i0 / MW);
+  let si = -1, sd = 1e9;
+  for (let dy = -8; dy <= 8; dy++) for (let dx = -8; dx <= 8; dx++) {
+    const x = x0 + dx, y = y0 + dy; if (x < 0 || y < 0 || x >= MW || y >= MH) continue;
+    const j = y * MW + x; if (ter[j] !== 0) continue;
+    const d = dx * dx + dy * dy; if (d >= 4 && d < sd) { sd = d; si = j; }
+  }
+  if (si < 0) si = i0;
+  G.pship = { x: (si % MW + .5) * T, y: (Math.floor(si / MW) + .5) * T };
+  const n = Math.min(5, 1 + Math.floor(L / 5) + (Math.random() < .4 ? 1 : 0), Math.max(1, Math.floor(alive().length * .5)));
+  for (let k = 0; k < n; k++) {
+    const hp = Math.round(Math.min(90, 14 + L * 2.5));
+    G.crabs.push({ kind: 'pirate', x: (x0 + .5) * T + rand(-14, 14), y: (y0 + .5) * T + rand(-14, 14), hp, maxHp: hp, dmg: Math.min(10, 2 + L * .35), sp: 1.25 * T, cd: 0, path: null, repath: rand(0, 1), phase: Math.random() * 6, flip: false, home: i0, lv: L });
+  }
+  reveal(x0, y0, 7);
+  G.alarm = true;
+  addLog(`🏴‍☠️ 海賊船があらわれた！ 海賊ダコが${n}匹上陸して、倉庫をねらっている！`, 'bad');
+  autoPause('海賊船がやってきた');
+  bigToast('🏴‍☠️ 海賊船がやってきた！', '倉庫の物をぬすまれないように守ろう');
+  raidAlert(`🏴‍☠️ 海賊ダコが${n}匹上陸しています！`);
+}
+function pirateMorning() {
+  if (G.day < 4 || G.pirateAt === G.day) return;
+  if (G.day >= (G.nextPirate || 5) && Math.random() < .6) {
+    G.pirateAt = G.day; G.pirateH = 9 + Math.floor(Math.random() * 7); G.pirateWarn = false;
+    G.nextPirate = G.day + 3 + Math.floor(Math.random() * 3);
+  }
+}
+function pirateHourly() {
+  if (G.pirateAt !== G.day) return;
+  const h = hour();
+  if (!G.pirateWarn && h >= G.pirateH - 1) { G.pirateWarn = true; addLog('🔭 沖に黒い帆の船が見える…海賊かも！', 'bad'); }
+  if (h >= G.pirateH) { G.pirateAt = null; if (!G.crabs.length && h < 17) spawnPirates(); }
+}
+function pirateTreasure(c, by) {
+  const r = Math.random();
+  if (r < .12) { giveGear(pick(RARE), by); return; }
+  if (r < .5) {
+    const t = pick([['wood', 12], ['stone', 8], ['herb', 3], ['berry', 12], ['fish', 8]]);
+    G.stock[t[0]] = (G.stock[t[0]] || 0) + t[1];
+    addLog(`💰 海賊ダコが宝ものを落とした！（${RES_N[t[0]]} +${t[1]}）`, 'good');
+    fx(c.x, c.y - 20, `💰 ${ICON[t[0]]}+${t[1]}`, '#e6a100');
+  }
+}
+function updatePirate(c, dt) {
+  const h = hour();
+  if (!c.loot && !c.flee && (h >= 18 || h < 6)) { c.flee = true; c.path = null; }   // 夕方になったら船へもどる
+  c.moving = false;
+  let tgt = null, bd = 1.6 * T;
+  for (const a of G.animals) { if (a.dead || a.inHouse) continue; const d = dist(a, c); if (d < bd) { bd = d; tgt = a; } }
+  c.tgt = tgt;
+  if (c.loot || c.flee) {   // 船へにげる
+    if (!c.path) { const [x, y] = tileOf(c); c.path = bfs(x, y, crabWalk, (xx, yy, i) => i === c.home, 60000) || bfs(x, y, crabWalk, (xx, yy, i) => ter[i] <= 1, 60000) || []; }
+    if (c.path.length) { followPath(c, c.sp * (c.loot ? .75 : 1) * dt); return; }
+    if (c.loot) addLog(`🏴‍☠️ 海賊に${RES_N[c.loot.k]}を${c.loot.n}こ持っていかれた…`, 'bad');
+    crabGone(c); return;
+  }
+  if (tgt && bd < T * .8) { c.cd -= dt; if (c.cd <= 0) { c.cd = 1.4; damage(tgt, c.dmg, '海賊におそわれた'); } return; }
+  if (dist(c, campPos()) < 1.6 * T) {   // 倉庫に着いたらぬすむ
+    const ks = ['berry', 'fish', 'wood', 'stone', 'meal', 'veg'].filter(k => (G.stock[k] || 0) >= 3).sort((p, q) => G.stock[q] - G.stock[p]);
+    c.path = null;
+    if (!ks.length) { c.flee = true; return; }
+    const k = ks[0], n = Math.min(G.stock[k], Math.round(10 + (c.lv || 0) * 2));
+    G.stock[k] -= n; c.loot = { k, n };
+    addLog(`🏴‍☠️ 海賊ダコが倉庫から${RES_N[k]}を${n}こぬすんだ！ 追いかけて取り返そう`, 'bad');
+    fx(c.x, c.y - 34, 'ぬすまれた！', '#c0392b'); se('alarm');
+    return;
+  }
+  if (c.path && c.path.length) {
+    const ni = c.path[0];
+    if (isBarrier(bld[ni])) { crabHitBuild(c, ni, dt); return; }
+    if (bld[ni] === 3) { c.path = null; return; }
+    followPath(c, c.sp * dt); return;
+  }
+  c.repath -= dt;
+  if (c.repath <= 0) { c.repath = 3; const [x, y] = tileOf(c); c.path = bfs(x, y, crabWalk, nearCamp, 60000) || bfs(x, y, crabPlan, nearCamp, 60000); }
+}
+function pirateC(g, c, t) {   // 海賊ダコ
+  const x = c.x, y = c.y - 4;
+  g.save(); g.translate(x, y); g.scale(c.flip ? -1.05 : 1.05, 1.05);
+  shadow(g, 0, 11, 13, 3.5);
+  g.lineCap = 'round';
+  const w = Math.sin(t * 10 + c.phase);
+  for (let k = -2; k <= 2; k++) {
+    g.beginPath(); g.moveTo(k * 4, 2); g.quadraticCurveTo(k * 5 + (k % 2 ? w : -w) * 2, 8, k * 6, 11);
+    g.strokeStyle = OL; g.lineWidth = 5; g.stroke(); g.strokeStyle = '#b07cc6'; g.lineWidth = 3; g.stroke();
+  }
+  g.lineWidth = 2; g.strokeStyle = OL;
+  g.beginPath(); g.ellipse(0, -6, 11, 11, 0, 0, Math.PI * 2); g.fillStyle = '#b07cc6'; g.fill(); g.stroke();
+  g.beginPath(); g.moveTo(-11, -9); g.quadraticCurveTo(0, -23, 11, -9); g.closePath(); g.fillStyle = '#e53935'; g.fill(); g.stroke();   // バンダナ
+  dot(g, -3, -14, 1.3, '#fff'); dot(g, 3, -13, 1.3, '#fff');
+  g.beginPath(); g.moveTo(10, -10); g.lineTo(16, -14); g.lineTo(15, -7); g.closePath(); g.fillStyle = '#e53935'; g.fill(); g.stroke();
+  dot(g, 4, -5, 2, OL); dot(g, 4.6, -5.6, .7, '#fff');
+  g.beginPath(); g.arc(-4, -5, 3, 0, Math.PI * 2); g.fillStyle = OL; g.fill();   // アイパッチ
+  g.beginPath(); g.moveTo(-6.5, -7); g.lineTo(-10.5, -9.5); g.stroke();
+  g.beginPath(); g.arc(1, -.5, 2.2, .2, Math.PI - .2); g.stroke();
+  if (c.loot) { E(g, -12, -1, 6.5, 6, '#d9b77a'); }   // ぬすんだ袋
+  g.restore();
+  if (c.loot) { g.font = '14px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(ICON[c.loot.k] || '💰', x, y - 30); }
+  g.fillStyle = 'rgba(0,0,0,.2)'; g.fillRect(x - 12, y + 16, 24, 3);
+  g.fillStyle = '#e53935'; g.fillRect(x - 12, y + 16, 24 * Math.max(0, c.hp / c.maxHp), 3);
+}
+function shipC(g, s, t) {   // 海賊船
+  const x = s.x, y = s.y + Math.sin(t * 1.5) * 2;
+  g.save(); g.translate(x, y);
+  g.lineWidth = 2.2; g.strokeStyle = OL;
+  g.beginPath(); g.ellipse(0, 12, 40, 6, 0, 0, Math.PI * 2); g.fillStyle = 'rgba(255,255,255,.35)'; g.fill();
+  g.beginPath(); g.moveTo(-36, -2); g.lineTo(36, -2); g.lineTo(26, 12); g.lineTo(-26, 12); g.closePath(); g.fillStyle = '#6d4c33'; g.fill(); g.stroke();
+  g.beginPath(); g.moveTo(-33, 3); g.lineTo(33, 3); g.strokeStyle = '#4e3423'; g.stroke(); g.strokeStyle = OL;
+  g.beginPath(); g.moveTo(0, -2); g.lineTo(0, -58); g.lineWidth = 3; g.stroke(); g.lineWidth = 2.2;
+  g.beginPath(); g.moveTo(-22, -52); g.quadraticCurveTo(-26, -30, -22, -10); g.lineTo(22, -10); g.quadraticCurveTo(26, -30, 22, -52); g.closePath(); g.fillStyle = '#2b2b2b'; g.fill(); g.stroke();
+  dot(g, 0, -34, 7, '#f5f5f5'); dot(g, -2.5, -35, 1.8, '#2b2b2b'); dot(g, 2.5, -35, 1.8, '#2b2b2b');   // ドクロ
+  g.strokeStyle = '#f5f5f5'; g.lineWidth = 2.5; g.beginPath(); g.moveTo(-9, -22); g.lineTo(9, -16); g.moveTo(9, -22); g.lineTo(-9, -16); g.stroke();
+  g.strokeStyle = OL; g.lineWidth = 2;
+  const fw = Math.sin(t * 6) * 2;
+  g.beginPath(); g.moveTo(0, -58); g.lineTo(14, -55 + fw); g.lineTo(0, -50); g.closePath(); g.fillStyle = '#e53935'; g.fill(); g.stroke();
+  g.restore();
+}
 // ---------- 島の豊かさ（資産）：敵の強さはこれで決まる ----------
 function calcWealth() {
   const s = G.stock;
@@ -3396,6 +3525,7 @@ function spawnRaid() {
   n = Math.max(1, Math.round(n * (G.raidMul || 1)));   // 王さまをたおすと半分
   const cands = [];
   bfs(G.cx, G.cy, landWalk, (x, y, i, d) => { if (d >= 16 && ter[i] === 2) cands.push(i); return false; }, 1e9, 36);
+  if (!cands.length) bfs(G.cx, G.cy, landWalk, (x, y, i, d) => { if (d >= 10 && cands.length < 400 && (ter[i] === 2 || isShore(x, y, i))) cands.push(i); return false; }, 1e9, 120);   // キャンプが浜から遠いときは、遠くの浜から上陸する
   if (!cands.length) return;
   const i0 = pick(cands);
   for (let k = 0; k < n; k++) {
@@ -3412,9 +3542,11 @@ function spawnRaid() {
 }
 function crabGone(c) {
   G.crabs = G.crabs.filter(x => x !== c);
-  if (!G.crabs.length) { G.alarm = false; G.raidOrder = null; removeAlert('raid'); undraftAll(); addLog('🌅 朝になって、おそってきたものたちは帰っていった', 'good'); }
+  if (c.kind === 'pirate' && !G.crabs.some(x => x.kind === 'pirate')) { G.pship = null; addLog('⛵ 海賊船は沖へ去っていった'); }
+  if (!G.crabs.length) { G.alarm = false; G.raidOrder = null; removeAlert('raid'); undraftAll(); if (c.kind !== 'pirate') addLog('🌅 朝になって、おそってきたものたちは帰っていった', 'good'); }
 }
 function updateCrab(c, dt) {
+  if (c.kind === 'pirate') { updatePirate(c, dt); return; }
   // 朝になったら海へ帰る
   const h = hour();
   if (h >= 6 && h < 20) {
@@ -3476,7 +3608,12 @@ function killCrab(c, by) {
   by.kills = (by.kills || 0) + 1;
   if (c.kind !== 'wild' && Math.random() < .05) giveGear('crabshell', by);   // たまにこうらを落とす
   if (by.kills === 1 || by.kills % 5 === 0) diary(by, `夜の戦いで敵をたおした（${by.kills}匹目）`);
-  if (c.kind === 'wild') {
+  if (c.kind === 'pirate') {
+    addLog(`⚔ ${by.name}が海賊ダコをやっつけた！`, 'good');
+    if (c.loot) { G.stock[c.loot.k] = (G.stock[c.loot.k] || 0) + c.loot.n; addLog(`💪 ぬすまれた${RES_N[c.loot.k]}${c.loot.n}こを取り返した！`, 'good'); fx(c.x, c.y - 34, '取り返した！', '#2e7d32'); c.loot = null; }
+    pirateTreasure(c, by);
+    if (!G.crabs.some(x => x !== c && x.kind === 'pirate')) G.pship = null;
+  } else if (c.kind === 'wild') {
     addLog(`⚔ ${by.name}が${SP[c.wsp].n}を追いはらった！`, 'good');
     if (G.herd) G.herd.rel = Math.max(0, G.herd.rel - 3);
   } else {
@@ -3484,7 +3621,7 @@ function killCrab(c, by) {
     fx(c.x, c.y - 20, '+2 🐟', '#2e7d32');
     addLog(`⚔ ${by.name}が大ガニをたおした！（カニ肉 +2）`, 'good');
   }
-  if (!G.crabs.length) { G.alarm = false; G.raidOrder = null; removeAlert('raid'); undraftAll(); addLog('🎉 大ガニを追いはらった！', 'good'); }
+  if (!G.crabs.length) { G.alarm = false; G.raidOrder = null; removeAlert('raid'); undraftAll(); addLog(c.kind === 'pirate' ? '🎉 海賊を追いはらった！' : '🎉 大ガニを追いはらった！', 'good'); }
 }
 function combatCheck(a, dt) {
   let c = null, bd = 1e9;
@@ -3674,7 +3811,7 @@ function update(dt) {
     if (seasonDay() === 2 && G.festKey !== festKey() && G.day >= 2) addLog('🎪 この季節のお祭りはまだです。キャンプをタップするとひらけます（木20・食べ物20）');
     dailyEvent(); tryBirths(); growUp();
     if (G.snakes && G.snakes.length < 6 && Math.random() < .4) spawnSnake(25);
-    traderMorning();   // 新しいヘビ
+    traderMorning(); pirateMorning();   // 新しいヘビ
     saveGame(false);   // 毎朝自動セーブ
   }
   if (G.fest) updateFest(dt);
@@ -4132,6 +4269,11 @@ function crabC(g, c, t) {
     dot(g, sd * 4.5, -12.5, 1.4, '#222');
     g.beginPath(); g.moveTo(sd * 2, -17); g.lineTo(sd * 8, -15); g.stroke();
   });
+  // 海賊のぼうしとアイパッチ
+  g.beginPath(); g.arc(-5, -13, 3.4, 0, Math.PI * 2); g.fillStyle = OL; g.fill();
+  g.beginPath(); g.moveTo(-14, -20); g.quadraticCurveTo(0, -36, 14, -20); g.quadraticCurveTo(0, -25, -14, -20); g.closePath(); g.fillStyle = c.boss ? '#5d2e8c' : '#2b2b2b'; g.fill(); g.stroke();
+  dot(g, 0, -25.5, 2.2, '#f5f5f5');
+  if (c.boss) { g.beginPath(); g.ellipse(10, -31, 3, 8, .7, 0, Math.PI * 2); g.fillStyle = '#ff7043'; g.fill(); g.stroke(); }
   g.restore();
   if (c.boss) return;
   // HP
@@ -4283,7 +4425,8 @@ function render(t) {
       if (a.carry) { ctx.font = '13px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(ICON[a.carry.k], a.x + 12, a.y - 18); }
     } });
   }
-  for (const c of G.crabs) list.push({ y: c.y, d: () => c.kind === 'wild' ? wildC(ctx, c, t) : crabC(ctx, c, t) });
+  if (G.pship) list.push({ y: G.pship.y - 30, d: () => shipC(ctx, G.pship, t) });
+  for (const c of G.crabs) list.push({ y: c.y, d: () => c.kind === 'wild' ? wildC(ctx, c, t) : c.kind === 'pirate' ? pirateC(ctx, c, t) : crabC(ctx, c, t) });
   if (G.herd && G.herd.m) for (const m of G.herd.m) {
     if (m.x < vx0 - 60 || m.x > vx1 + 60 || m.y < vy0 - 60 || m.y > vy1 + 60) continue;
     list.push({ y: m.y, d: () => drawAnimal(ctx, m.look, m.x, m.y, .85 * SIZE_SCALE[SP[G.herd.sp].size], t, { phase: m.phase, flip: m.flip, walk: m.moving }) });
@@ -4895,9 +5038,9 @@ function festC(g, x, y, t) {   // お祭りの飾り（旗とちょうちんの�
 
 // ---------- 島の日記（きのうのまとめ） ----------
 const NEWS_K = [['💀', 'die'], ['🎒', 'left'], ['👶', 'born'], ['🧒', 'grow'], ['🎉', 'yay'], ['🏠', 'build'], ['🔨', 'build'], ['🛠', 'craft'], ['💡', 'tech'], ['⬆', 'lv'],
-  ['🦀', 'raid'], ['⚔', 'kill'], ['💥', 'bad'], ['😶', 'bad'], ['🍓', 'bad'], ['😤', 'bad'], ['💢', 'bad'], ['💕', 'friend'], ['💞', 'friend'], ['🎪', 'fest'], ['🌸', 'offer'], ['🛒', 'trade'], ['📦', 'find']];
+  ['🦀', 'raid'], ['⚔', 'kill'], ['💥', 'bad'], ['😶', 'bad'], ['🍓', 'bad'], ['😤', 'bad'], ['💢', 'bad'], ['💕', 'friend'], ['💞', 'friend'], ['🎪', 'fest'], ['🌸', 'offer'], ['🛒', 'trade'], ['📦', 'find'], ['🏴', 'pirate'], ['💪', 'back']];
 const NEWS_TXT = new Set(['die', 'left', 'born', 'grow', 'tech', 'fest', 'visit']);
-const NEWS_L = { build: '🔨 建てた物', craft: '🛠 作った装備', lv: '⬆ レベルアップ', raid: '🦀 大ガニの上陸', kill: '⚔ たおした敵', bad: '😤 不機嫌のトラブル', friend: '💕 大の仲よしになった組', offer: '🌸 おそなえ', trade: '🛒 行商人との交換', find: '📦 見つけた物' };
+const NEWS_L = { build: '🔨 建てた物', craft: '🛠 作った装備', lv: '⬆ レベルアップ', raid: '🦀 大ガニの上陸', kill: '⚔ たおした敵', bad: '😤 不機嫌のトラブル', friend: '💕 大の仲よしになった組', offer: '🌸 おそなえ', trade: '🛒 行商人との交換', find: '📦 見つけた物', pirate: '🏴‍☠️ 海賊船', stolen: '😢 海賊に持っていかれた', back: '💪 海賊から取り返した' };
 function newsTrack(text) {
   if (typeof G === 'undefined' || state !== 'play') return;
   const hit = NEWS_K.find(([e]) => text.startsWith(e)); if (!hit) return;
@@ -4905,6 +5048,8 @@ function newsTrack(text) {
   if (k === 'yay') { if (/仲間になった/.test(text)) k = 'visit'; else if (/大人/.test(text)) k = 'grow'; else return; }
   if (k === 'raid' && !/上陸した/.test(text)) return;
   if (k === 'left' && !/家出/.test(text)) return;
+  if (k === 'pirate' && !/あらわれた|持っていかれた/.test(text)) return;
+  if (k === 'pirate' && /持っていかれた/.test(text)) k = 'stolen';
   if (k === 'kill' && !/たおした/.test(text)) return;
   if (k === 'fest' && !/終わった|中止/.test(text)) return;
   if (k === 'offer' && !/そなえた。/.test(text)) return;
@@ -5412,7 +5557,7 @@ function saveGame(manual) {
            herd: G.herd ? { ...G.herd, m: undefined } : null, boss: G.boss, endings: G.endings, raidMul: G.raidMul, chest: G.chest,
            caveFound: G.caveFound, caveDone: G.caveDone, found: G.found, poiTotal: G.poiTotal, fightBonus: G.fightBonus, seeds: G.seeds, births: G.births, herdRaidDay: G.herdRaidDay, trader: G.trader, lastTrader: G.lastTrader || 0,
            marks: [...G.marks], chie: G.chie || 0, tech: G.tech || {}, chieTold: !!G.chieTold, gearStock: G.gearStock, craftQ: G.craftQ, crafted: G.crafted || 0, snakes: (G.snakes || []).map(s => ({ ...s, tgt: null })),
-           festKey: G.festKey ?? null, islandLog: G.islandLog || [], news: G.news || {}, graveTold: !!G.graveTold },
+           festKey: G.festKey ?? null, nextPirate: G.nextPirate || 0, pirateAt: G.pirateAt ?? null, pirateH: G.pirateH || 0, islandLog: G.islandLog || [], news: G.news || {}, graveTold: !!G.graveTold },
       cam: { x: cam.x, y: cam.y, z: cam.z },
     };
     localStorage.setItem(SAVE_KEY, JSON.stringify(data));
@@ -5436,7 +5581,7 @@ function loadGame(data) {
   roof.fill(0); if (data.roof) unrle(data.roof, roof);
   Object.assign(G, data.g);
   G.rel = new Map(data.g.rel); G.crabs = []; G.fx = []; G.alarm = false; G.over = false; G.selected = null;
-  G.chestBy = null; G.bossAttack = false; G.fest = null;
+  G.chestBy = null; G.bossAttack = false; G.fest = null; G.pship = null;
   G.trader = data.g.trader || null; G.lastTrader = data.g.lastTrader || 0;
   G.chie = data.g.chie || 0; G.tech = data.g.tech || {}; G.chieTold = !!data.g.chieTold;
   G.gearStock = data.g.gearStock || {}; G.craftQ = data.g.craftQ || []; G.crafted = data.g.crafted || 0;
@@ -5676,7 +5821,7 @@ function se(name) {
   }
 }
 // お知らせの文の頭の絵文字で、効果音を決める
-const LOG_SE = { '💥': 'alarm', '😶': 'sad', '🛠': 'done', '👕': 'pop', '🛒': 'done', '⬆': 'friend', '💡': 'friend', '🛶': 'friend', '🎯': 'pop', '✋': 'pop', '🐍': 'alarm', '☠': 'bad', '🪓': 'done', '🔍': 'friend', '🏆': 'fanfare', '🗼': 'alarm', '🪤': 'pop', '♨': 'friend', '🦀': 'alarm', '⚠': 'bad', '💀': 'sad', '🎒': 'sad', '👶': 'baby', '🎉': 'friend', '🐾': 'friend', '🏠': 'done', '🔨': 'done', '📦': 'done', '💎': 'done', '🏺': 'done', '⚔': 'hit', '💥': 'hit', '🩹': 'bad', '🤧': 'bad', '😠': 'bad', '😤': 'bad', '💢': 'bad', '🥶': 'bad', '🥵': 'bad', '😡': 'bad', '💕': 'friend', '💊': 'done', '✨': 'friend', '🌙': 'night', '👑': 'fanfare', '🎁': 'friend', '🌈': 'friend', '🌊': 'pop', '🌿': 'pop', '🍽': 'eat', '💾': 'done', '📘': 'done', '🛡': 'hit', '🕳': 'friend', '🦇': 'bad', '🌀': 'alarm', '☀': 'morning', '☁': 'morning', '☔': 'morning', '❄': 'morning', '🌸': 'season', '🌻': 'season', '🍁': 'season', '⛄': 'season' };
+const LOG_SE = { '🏴': 'alarm', '🔭': 'alarm', '💪': 'done', '💰': 'done', '⛵': 'pop', '💥': 'alarm', '😶': 'sad', '🛠': 'done', '👕': 'pop', '🛒': 'done', '⬆': 'friend', '💡': 'friend', '🛶': 'friend', '🎯': 'pop', '✋': 'pop', '🐍': 'alarm', '☠': 'bad', '🪓': 'done', '🔍': 'friend', '🏆': 'fanfare', '🗼': 'alarm', '🪤': 'pop', '♨': 'friend', '🦀': 'alarm', '⚠': 'bad', '💀': 'sad', '🎒': 'sad', '👶': 'baby', '🎉': 'friend', '🐾': 'friend', '🏠': 'done', '🔨': 'done', '📦': 'done', '💎': 'done', '🏺': 'done', '⚔': 'hit', '💥': 'hit', '🩹': 'bad', '🤧': 'bad', '😠': 'bad', '😤': 'bad', '💢': 'bad', '🥶': 'bad', '🥵': 'bad', '😡': 'bad', '💕': 'friend', '💊': 'done', '✨': 'friend', '🌙': 'night', '👑': 'fanfare', '🎁': 'friend', '🌈': 'friend', '🌊': 'pop', '🌿': 'pop', '🍽': 'eat', '💾': 'done', '📘': 'done', '🛡': 'hit', '🕳': 'friend', '🦇': 'bad', '🌀': 'alarm', '☀': 'morning', '☁': 'morning', '☔': 'morning', '❄': 'morning', '🌸': 'season', '🌻': 'season', '🍁': 'season', '⛄': 'season' };
 function logSound(text) { const k = LOG_SE[[...text][0]]; if (k) se(k); }
 
 // 最初に画面をさわったときに音を出せるようにする（ブラウザの決まり）
@@ -5823,6 +5968,8 @@ if (params.get('auto')) {
     G.testMood0 = alive().map(a => a.name + ':' + Math.round(a.moodT || 0)).join(',');
     if (params.get('newtest') === '2') { G.festKey = null; startFest(); }
   }
+  if (params.get('rc')) { G.rc = { raid: 0, pirate: 0, logs: [] }; const o1 = spawnRaid, o2 = spawnPirates, o3 = addLog; spawnRaid = function () { G.rc.raid++; return o1(); }; spawnPirates = function () { G.rc.pirate++; return o2(); }; addLog = function (t, k) { if (/^(🦀|🏴|🔭|💪|💰|⛵)/.test(t)) G.rc.logs.push(G.day + ':' + t.slice(0, 18)); return o3(t, k); }; }
+  if (params.get('piratetest')) { G.time = 10 / 24; Object.assign(G.stock, { wood: 120, berry: 80, fish: 40 }); spawnPirates(); G.pBefore = JSON.stringify(G.stock); if (params.get('piratetest') === '2') { const cp = campPos(); for (const k of G.crabs) { k.x = cp.x + rand(40, 70); k.y = cp.y + rand(20, 50); k.hp = k.maxHp = 400; } for (const a of alive()) { a.x = cp.x - 300; a.y = cp.y; } } }
   if (params.get('breaktest')) { G.bLog = []; const ol = addLog; addLog = (t, k) => { if (/^(💥|😶|🍓|🎒|⚠|😤|💢)/.test(t)) G.bLog.push(t.slice(0, 2)); return ol(t, k); }; for (const x of alive()) addMem(x, 'テスト', -70, 99); }
   if (params.get('snaketest')) { for (let k = 0; k < 2; k++) { const x = (G.cx + 4 + k) * T, y = (G.cy + 4) * T; G.snakes.push({ x, y, hx: x, hy: y, hp: 32, maxHp: 32, cd: 0, phase: k, flip: false, col: '#7cb342', wt: 0, tgt: null, aggroT: 0, rest: 0 }); } }
   const sim = +params.get('sim') || 0;
@@ -5839,6 +5986,9 @@ if (params.get('auto')) {
   if (params.get('opentech')) openTech();
   if (params.get('newtest')) { const el = document.getElementById('err'); el.style.display = 'block'; const kid = G.animals.find(x => x.name === G.kidName); el.textContent = 'day ' + G.day + ' fest ' + JSON.stringify(G.fest) + ' key ' + G.festKey + ' | grave fl ' + ((G.testGrave.fl || 0) > dayF()) + ' | kid ' + (kid ? kid.name + ' kid' + !!kid.kid + ' baby' + !!kid.baby + ' task' + kid.task : '-') + ' | builds ' + [...G.builds.values()].filter(b => b.done).map(b => b.type).join(',') + ' | log ' + (G.islandLog || []).length + ' news ' + JSON.stringify(G.news) + ' | ' + alive().map(a => a.name + (a.dance ? '💃' : '') + ' m' + Math.round(a.mood) + '[' + moodFactors(a).map(f => f[0] + f[1]).join(',') + ']').join(' / ') + ' | before ' + G.testMood0; }
   if (params.get('openlog')) openIslandLog();
+  if (params.get('rc')) { const el = document.getElementById('err'); el.style.display = 'block'; el.textContent = 'day ' + G.day + ' raids ' + G.rc.raid + ' pirates ' + G.rc.pirate + ' next ' + G.nextPirate + ' | ' + G.rc.logs.join(' / ') + ' | news ' + JSON.stringify(G.news); }
+  if (params.get('notoast')) $('bigToast').style.display = 'none';
+  if (params.get('piratetest')) { const el = document.getElementById('err'); el.style.display = 'block'; el.textContent = 'ship ' + !!G.pship + ' | pirates ' + G.crabs.filter(k => k.kind === 'pirate').map(k => Math.round(k.hp) + (k.loot ? '[' + k.loot.k + k.loot.n + ']' : '') + (k.flee ? 'F' : '')).join(',') + ' | before ' + G.pBefore + ' | now ' + JSON.stringify(G.stock) + ' | ' + alive().map(a => a.name + ' hp' + Math.round(a.hp)).join(' / '); if (G.crabs[0]) { cam.x = G.crabs[0].x; cam.y = G.crabs[0].y; } if (params.get('shipview') && G.pship) { cam.x = G.pship.x; cam.y = G.pship.y; } }
   if (params.get('opencamp')) showCampInfo();
   if (params.get('breaktest')) { const el = document.getElementById('err'); el.style.display = 'block'; const cnt = {}; for (const t of G.bLog) cnt[t] = (cnt[t] || 0) + 1; el.textContent = 'day ' + G.day + ' events ' + JSON.stringify(cnt) + ' | ' + G.animals.map(a => a.name + (a.left ? '(家出)' : '') + ' mood' + Math.round(a.mood) + ' br' + (a.breaks || 0)).join(' / '); }
   if (params.get('campmode')) { $('bOpen').click(); setBuildMode('camp'); }
