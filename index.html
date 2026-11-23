@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>どうぶつ無人島サバイバル</title>
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<meta name="apple-mobile-web-app-title" content="どうぶつ島">
+<meta name="application-name" content="どうぶつ島">
+<meta name="theme-color" content="#7cc6e0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Zen+Maru+Gothic:wght@500;700&display=swap" rel="stylesheet">
@@ -61,6 +66,25 @@
   .jobs div { white-space: nowrap; }
   .zcard .jobs, .scard .jobs { font-size: 11px; gap: 0 6px; }
   /* スタート画面 */
+  /* タイトル画面 */
+  #title { position: fixed; inset: 0; z-index: 9; overflow: hidden; background: #bfe6f5; }
+  #titleCv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  #title .tBox { position: absolute; left: 0; right: 0; top: max(5vh, 22px); text-align: center; pointer-events: none; }
+  #title .tLogo { font-family: 'Zen Maru Gothic', sans-serif; font-weight: 700; line-height: 1.12; letter-spacing: .04em; }
+  #title .tLogo span { display: block; color: #fff; paint-order: stroke fill; -webkit-text-stroke: 7px #5b4636; text-shadow: 0 6px 0 rgba(91,70,54,.28); }
+  #title .t1 { font-size: clamp(30px, 8.5vw, 58px); color: #ffd36b !important; }
+  #title .t2 { font-size: clamp(34px, 10vw, 74px); }
+  #title .tSub { margin-top: 10px; display: inline-block; background: rgba(255,255,255,.88); border: 2px solid #5b4636; border-radius: 999px; padding: 3px 16px; font-size: clamp(12px, 3.4vw, 15px); font-weight: 700; color: #5b4636; }
+  #title .tBtns { position: absolute; left: 50%; transform: translateX(-50%); bottom: max(5vh, 22px); display: flex; flex-direction: column; gap: 10px; width: min(340px, 86vw); }
+  #title .tb { background: #fff; border: 3px solid #5b4636; border-radius: 18px; padding: 10px 14px; font-size: 18px; font-weight: 700; color: #5b4636; box-shadow: 0 4px 0 #5b4636; display: flex; flex-direction: column; align-items: center; line-height: 1.3; }
+  #title .tb:active, #title .ts:active { transform: translateY(3px); box-shadow: 0 1px 0 #5b4636; }
+  #title .tb.go { background: #ffd36b; }
+  #title .tb small { font-size: 11.5px; font-weight: 700; color: #7a6656; margin-top: 2px; }
+  #title .tRow { display: flex; gap: 10px; }
+  #title .ts { flex: 1; background: rgba(255,255,255,.92); border: 2px solid #5b4636; border-radius: 14px; padding: 7px 8px; font-size: 14px; font-weight: 700; color: #5b4636; box-shadow: 0 3px 0 #5b4636; }
+  body.menu #build, body.drafting #build { display: none; }
+  #toTitle { background: #fff; border: 2px solid #5b4636; border-radius: 12px; padding: 3px 12px; font-weight: 700; color: #5b4636; font-size: 13px; margin-bottom: 8px; }
+  #iconCv { position: fixed; left: 0; top: 0; z-index: 100; }
   #start { position: fixed; inset: 0; background: #f4efe6; overflow: auto; padding: 22px; z-index: 10; }
   #start h1 { font-family: 'Zen Maru Gothic', sans-serif; font-size: 28px; margin: 0 0 4px; }
   #start p { margin: 0 0 14px; font-size: 14px; line-height: 1.7; }
@@ -203,7 +227,7 @@
   #tradeBox h2 { font-family: 'Zen Maru Gothic', sans-serif; margin: 0 0 4px; }
   #draftBar { position: fixed; left: 50%; transform: translateX(-50%); bottom: 96px; z-index: 12; display: none; flex-wrap: wrap; align-items: center; justify-content: center; gap: 2px 4px; background: rgba(255,255,255,.95); border: 3px solid #e53935; border-radius: 14px; padding: 5px 10px 7px; font-size: 12.5px; width: 380px; max-width: 94vw; box-sizing: border-box; box-shadow: 0 3px 0 rgba(91,70,54,.25); }
   #draftBar span { width: 100%; text-align: center; }
-  @media (max-width: 760px) { body.drafting #panel { display: none !important; } }
+  @media (max-width: 760px) { body.drafting #panel { display: none !important; } body.panelOpen #build, body.drafting #log { display: none; } }
   #techBox { position: fixed; inset: 0; background: rgba(40,30,20,.55); display: none; align-items: center; justify-content: center; z-index: 20; }
   #techBox .box { background: #fff; border: 3px solid #5b4636; border-radius: 18px; padding: 14px 16px; width: 460px; max-width: 94vw; max-height: 88vh; overflow: auto; }
   #techBox h2 { font-family: 'Zen Maru Gothic', sans-serif; margin: 0 0 4px; }
@@ -352,7 +376,20 @@
   </div>
 </div>
 
-<div id="start">
+<div id="title">
+  <canvas id="titleCv"></canvas>
+  <div class="tBox">
+    <div class="tLogo"><span class="t1">どうぶつ</span><span class="t2">無人島サバイバル</span></div>
+    <div class="tSub">🐾 ゆるくて、ちょっときびしい島ぐらし</div>
+  </div>
+  <div class="tBtns">
+    <button id="tCont" class="tb go" style="display:none">▶ 続きから遊ぶ<small id="tContInfo"></small></button>
+    <button id="tNew" class="tb">🏝 はじめから</button>
+    <div class="tRow"><button id="tZukan" class="ts">📖 動物図鑑</button><button id="tHelp" class="ts">？ あそびかた</button></div>
+  </div>
+</div>
+<div id="start" style="display:none">
+  <button id="toTitle">← タイトルへ</button>
   <h1>🏝️ どうぶつ無人島サバイバル</h1>
   <p>
     いろんな動物たちが流れついた、大きな無人島。木を切り、食べ物を集め、夜には上陸してくる大ガニから身を守りましょう。<br>
@@ -397,6 +434,7 @@
   <b>🎪 お祭り</b>：季節に1回、キャンプをタップ →「🎪 お祭りをひらく」（木20・食べ物20）。みんながキャンプに集まっておどり、終わるとごきげんが大きく上がって、みんな仲よしになります。大ガニが来ると中止になります。<br>
   <b>🌸 かざり</b>：「🔨 建てる」→「🌸 かざり」で、🌷花だん・🟫小道・🏮ちょうちん・🗿石の像を置けます。近くにいる動物のごきげんが上がります。小道の上は歩くのが少し速く、ちょうちんは夜に明るく光ります。<br>
   <b>性格</b>：性格によって、得意な仕事や、不機嫌なときにしやすいこと（暴れる・ぼーっとする・やけ食い・サボる・ケンカ）が変わります。動物の「ようす」に出ます。<br>
+  <b>タイトル画面</b>：「▶ 続きから遊ぶ」でセーブから再開、「🏝 はじめから」で最初の2匹を選ぶ画面へ進みます。<br>
   <b>セーブ</b>：毎朝6時と1分ごと、ページを閉じるときに自動で保存されます。右上の💾でいつでも保存できます。次に開いたとき、スタート画面の「続きから遊ぶ」で再開できます（同じパソコン・同じブラウザで開いてください）。<br>
   <b>季節</b>：春→夏→秋→冬が3日ずつめぐります。冬は木の実が実らず魚も減るので、秋のうちにためておきましょう。夏はカニが増えます。<br>
   <b>気温</b>：動物ごとに快適な気温がちがいます。範囲より寒いと「寒さ」、暑いと「暑さ」がたまり、仕事がおそくなります。たまりすぎるとケガをして、最後は倒れてしまいます。<br>
@@ -3645,7 +3683,7 @@ function update(dt) {
   if (hh !== G.lastHour) { G.lastHour = hh; hourly(); }
   for (const b of G.builds.values()) if (b.type === 'farm' && b.done && s !== 3) b.grow = Math.min(1, (b.grow || 0) + dt / (DAY * 1.6) * (s === 0 ? 1.2 : 1) * (hasTech('irrigation') ? 1.5 : 1));
   G.temp = airTemp();
-  if (G.raidDay !== G.day && G.day >= 2 && h >= 21) { G.raidDay = G.day; if (Math.random() < Math.min(.85, .4 + threatLv() * .04) * SEASONS[s].raid) spawnRaid(); }
+  if (G.raidDay !== G.day && G.day >= 2 && h >= 21) { G.raidDay = G.day; if (Math.random() < Math.min(.9, .6 + threatLv() * .04) * SEASONS[s].raid) spawnRaid(); }
   if (G.herdRaidDay !== G.day && G.day >= 2 && h >= 21.5) {
     G.herdRaidDay = G.day;
     const hd = G.herd;
@@ -4479,6 +4517,7 @@ function needBar(label, v, col) { return `<div class="st"><span>${label}</span><
 const pcv = $('pcv'), pctx = pcv.getContext('2d');
 function select(a) {
   G.selected = a;
+  document.body.classList.toggle('panelOpen', !!a);
   if (!a) { $('panel').style.display = 'none'; cam.follow = null; buildTeamSel(); return; }
   $('panel').style.display = 'block';
   $('pname').textContent = a.name;
@@ -5250,6 +5289,86 @@ function drawStart(t) {
     drawAnimal(g, p.a.look, 100, 112, 2.3 * SIZE_SCALE[SP[p.a.sp].size] / 1.05, t, { phase: p.a.phase, walk: false });
   }
 }
+// ---------- タイトル画面 ----------
+let titleOn = true, lastState = '';
+const TITLE_SP = Object.keys(SP).sort(() => Math.random() - .5).slice(0, 6);
+const titleClouds = Array.from({ length: 6 }, (_, k) => ({ x: Math.random(), y: .08 + Math.random() * .32, s: .6 + Math.random() * .7, v: .006 + Math.random() * .01 }));
+function hideTitle() { titleOn = false; $('title').style.display = 'none'; }
+function showTitle() { titleOn = true; $('title').style.display = ''; $('start').style.display = 'none'; }
+$('tNew').onclick = () => { hideTitle(); $('start').style.display = 'block'; $('start').scrollTop = 0; };
+$('toTitle').onclick = showTitle;
+$('tZukan').onclick = openZukan;
+$('tHelp').onclick = () => { $('help').style.display = 'flex'; };
+function cloudShape(g, x, y, s) {
+  g.fillStyle = 'rgba(255,255,255,.95)';
+  for (const [dx, dy, r] of [[-26, 4, 16], [-8, -6, 22], [14, -2, 18], [30, 6, 13], [0, 8, 18]]) { g.beginPath(); g.arc(x + dx * s, y + dy * s, r * s, 0, Math.PI * 2); g.fill(); }
+}
+// 島の絵（タイトルとアイコンで共通）
+function islandScene(g, W, H, t, o) {
+  const hz = H * o.hz;   // 水平線
+  let gr = g.createLinearGradient(0, 0, 0, hz);
+  gr.addColorStop(0, '#8fd3f0'); gr.addColorStop(1, '#e8f8fc');
+  g.fillStyle = gr; g.fillRect(0, 0, W, hz + 1);
+  // 太陽
+  const sx = W * o.sun[0], sy = H * o.sun[1], sr = Math.min(W, H) * o.sun[2];
+  g.fillStyle = 'rgba(255,236,170,.55)'; g.beginPath(); g.arc(sx, sy, sr * 1.5, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#ffe07a'; g.beginPath(); g.arc(sx, sy, sr, 0, Math.PI * 2); g.fill();
+  // 雲
+  for (const cl of (o.clouds || [])) { const x = ((cl.x + t * cl.v) % 1.3 - .15) * W; cloudShape(g, x, cl.y * H, cl.s * Math.min(W, H) / 420); }
+  // 海
+  gr = g.createLinearGradient(0, hz, 0, H);
+  gr.addColorStop(0, '#7cc6e0'); gr.addColorStop(1, '#4a9fc8');
+  g.fillStyle = gr; g.fillRect(0, hz, W, H - hz);
+  g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = 2; g.lineCap = 'round';
+  for (let k = 0; k < (o.waves || 0); k++) {
+    const wx = ((k * 0.137 + t * .01 * (k % 3 + 1)) % 1) * W, wy = hz + 10 + ((k * 0.311) % 1) * (H - hz - 10);
+    g.beginPath(); g.arc(wx, wy, 7, Math.PI * 1.15, Math.PI * 1.85); g.stroke();
+  }
+  // 島
+  const cx = W / 2, cy = H * o.iy, rx = o.rx, ry = rx * .3, k = rx / 230;
+  g.save(); g.translate(cx, cy);
+  const bob = Math.sin(t * 1.2) * 2;
+  g.beginPath(); g.ellipse(0, 6 + bob * .3, rx * 1.06, ry * 1.12, 0, 0, Math.PI * 2); g.fillStyle = 'rgba(255,255,255,.45)'; g.fill();
+  blob(g, 0, 0, rx, ry, 2.1, .05); g.fillStyle = '#f4dfa2'; g.fill(); g.strokeStyle = '#d9bd78'; g.lineWidth = 3; g.stroke();
+  blob(g, 0, -ry * .18, rx * .8, ry * .7, 3.7, .07); g.fillStyle = '#a9dc84'; g.fill(); g.strokeStyle = '#86c063'; g.lineWidth = 3; g.stroke();
+  g.scale(k, k);
+  const items = [];
+  if (o.hut) items.push({ y: -40, d: () => hutC(g, -60, -62) });
+  if (o.fire) items.push({ y: -4, d: () => fireC(g, 10, -8, t) });
+  for (const pm of o.palms) items.push({ y: pm[1], d: () => palm(g, pm[0], pm[1], pm[2]) });
+  o.animals.forEach((sp, i) => {
+    const n = o.animals.length, bx = (i - (n - 1) / 2) * (o.gap || 62), dx = o.walk ? Math.sin(t * .45 + i * 1.7) * 14 : 0;
+    const by = (o.ay || 24) + (i % 2) * (o.ayy ?? 14);
+    const flip = o.walk ? Math.cos(t * .45 + i * 1.7) < 0 : i >= n / 2;
+    items.push({ y: by, d: () => drawAnimal(g, SP[sp].look, bx + dx, by, (o.as || 1.25) * SIZE_SCALE[SP[sp].size], t, { phase: i * 1.3, walk: !!o.walk, flip, mood: 'normal' }) });
+  });
+  items.sort((p, q) => p.y - q.y).forEach(it => it.d());
+  g.restore();
+  // 大ガニがこっそり（タイトルだけ）
+  if (o.crab) { const c = { x: cx + rx * .82 + Math.sin(t * .8) * 10, y: cy + ry * .55, phase: 0, scale: k * 1.1, boss: true }; crabC(g, c, t); }
+}
+function drawTitle(t) {
+  const cv = $('titleCv'), dpr = Math.min(2, window.devicePixelRatio || 1);
+  const W = cv.clientWidth, H = cv.clientHeight;
+  if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
+  const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const narrow = W < 600;
+  islandScene(g, W, H, t, { hz: narrow ? .44 : .48, sun: [.82, .2, .06], clouds: titleClouds, waves: 26, iy: narrow ? .56 : .6, rx: narrow ? W * .5 : Math.min(W * .46, 430), hut: true, fire: true,
+    palms: [[-150, -30, 1.7], [150, -22, 1.5], [-185, 10, 1.25]], animals: narrow ? TITLE_SP.slice(0, 5) : TITLE_SP, walk: true, gap: narrow ? 50 : 60, ay: 26, ayy: 16, as: narrow ? 1.55 : 1.2, crab: true });
+}
+// スマホのホーム画面用アイコン（確認用：?makeicon=1 で表示して画像にする）
+function drawIcon(g, S) {
+  g.save();
+  islandScene(g, S, S, 1.2, { hz: .5, sun: [.78, .2, .1], clouds: [{ x: .12, y: .16, s: 1.1, v: 0 }, { x: .5, y: .3, s: .6, v: 0 }], waves: 0, iy: .7, rx: S * .5, hut: false, fire: false,
+    palms: [[-150, -30, 2.6]], animals: ['capybara', 'rabbit'], walk: false, gap: 118, ay: 30, ayy: 0, as: 3.3 });
+  g.restore();
+}
+if (params.get('makeicon')) {
+  const S = +params.get('makeicon') || 512;
+  const cv = document.createElement('canvas'); cv.id = 'iconCv'; cv.width = S; cv.height = S; cv.style.width = S + 'px'; cv.style.height = S + 'px';
+  document.body.appendChild(cv);
+  document.fonts.ready.then(() => drawIcon(cv.getContext('2d'), S));
+}
 $('rerollAll').onclick = rollAll;
 $('goBtn').onclick = () => {
   if (loadSave() && !confirm('前のセーブデータは、新しい島のデータで上書きされます。\n新しい島ではじめてよろしいですか？')) return;
@@ -5367,6 +5486,9 @@ function showContinue() {
   $('contInfo').innerHTML = `<b>${yr}年目 ${s.icon}${s.n} ${sd}日目</b>（島に来て${d.g.day}日目）<br>生きている動物：${live.length ? live.join('・') : 'なし'}<br><span style="color:#7a6656">保存した日時：${when.toLocaleString('ja-JP')}</span>`;
   $('contBox').style.display = 'flex';
   $('contBtn').onclick = () => loadGame(d);
+  $('tContInfo').textContent = `${yr}年目 ${s.icon}${s.n}${sd}日目・${live.length}匹`;
+  $('tCont').style.display = ''; $('tNew').classList.remove('go');
+  $('tCont').onclick = () => { hideTitle(); loadGame(d); };
 }
 $('saveBtn').onclick = () => saveGame(true);
 $('storyBtn').onclick = () => { if (G.selected) openStory(G.selected); };
@@ -5623,7 +5745,9 @@ let last = performance.now(), uiT = 0;
 function frame(now) {
   const dt = Math.min(.1, (now - last) / 1000); last = now;
   const t = now / 1000;
-  if (state === 'start') drawStart(t);
+  if (state === 'start' && titleOn) drawTitle(t);
+  else if (state === 'start') drawStart(t);
+  if (state !== lastState) { lastState = state; document.body.classList.toggle('menu', state !== 'play'); }
   if ($('zukan').style.display === 'block') drawZukan(t);
   if (state === 'play' && !G.over) for (let i = 0; i < G.speed; i++) update(dt);
   render(t);
@@ -5644,6 +5768,7 @@ document.fonts.load(`bold 12px "Zen Maru Gothic"`, SAMPLE);
 
 rollAll();
 showContinue();
+if (params.get('auto') || params.get('cont') || params.get('notitle')) { hideTitle(); $('start').style.display = 'block'; }
 if (params.get('cont') && loadSave()) $('contBtn').click();
 if (params.get('auto')) {
   G.noSave = !params.get('savetest');   // 確認用の自動プレイでは、本物のセーブを上書きしない
