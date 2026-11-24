@@ -2225,14 +2225,14 @@ function setupBoss() {
 function updateBoss(dt) {
   const b = G.boss; if (!b || b.dead) return;
   const near = alive().filter(a => !a.inHouse && dist(a, b) < 1.7 * T);
-  if (!near.length) { b.hp = Math.min(b.maxHp, b.hp + b.maxHp * .01 * dt); return; }
+  if (!near.length) { b.hp = Math.min(b.maxHp, b.hp + b.maxHp * .0025 * dt); return; }
   b.cd -= dt;
   if (b.cd <= 0) { b.cd = 1.6; const t = pick(near); damage(t, 14, 'カニの王さま'); fx(b.x, b.y - 60, 'ガシャン！', '#c0392b'); }
 }
 function updateQuest(a, dt) {
   const b = G.boss;
   if (!b || b.dead || !G.bossAttack) { a.quest = false; return false; }
-  if ((a.hp < a.maxHp * .25 && !hasT(a, 'brave')) || a.hunger < 15) {
+  if ((a.hp < a.maxHp * .35 && !hasT(a, 'brave')) || a.hunger < 15) {
     a.quest = false; interrupt(a); addLog(`${a.name}はカニの王さまとの戦いから引きあげた`);
     if (!alive().some(o => o.quest)) { G.bossAttack = false; addLog('🏳 みんな引きあげてしまった…王さまはまた元気になってしまう', 'bad'); showBossAlert(); }
     return false;
@@ -2257,9 +2257,15 @@ function updateQuest(a, dt) {
   }
   return true;
 }
+function bossTeam() {
+  const ok = a => !a.baby && !a.kid && !a.injury && !a.sick && a.hp > a.maxHp * .5 && a.hunger > 30;
+  const fighters = alive().filter(a => isFighter(a) && ok(a));
+  const others = alive().filter(a => !isFighter(a) && ok(a) && !hasT(a, 'coward')).sort((p, q) => eff(q, 'fight') - eff(p, 'fight'));
+  return fighters.concat(others).slice(0, Math.max(6, fighters.length));
+}
 function startBossFight() {
-  const team = alive().filter(a => isFighter(a) && a.hp > a.maxHp * .5);
-  if (!team.length) { addLog('戦える仲間がいません（力や体力の強い動物を仲間にしよう）', 'bad'); return; }
+  const team = bossTeam();
+  if (!team.length) { addLog('元気な大人の仲間がいません（ケガやおなかがすいている子は休ませよう）', 'bad'); return; }
   G.bossAttack = true;
   for (const a of team) { interrupt(a); wake(a); a.quest = true; diary(a, 'カニの王さまに挑みに出発した'); }
   addLog(`⚔ ${team.map(a => a.name).join('・')}がカニの王さまに挑みに出発した！`, 'bad');
@@ -2276,7 +2282,7 @@ function showBossAlert() {
   const look = button('👀 見る', () => { cam.x = b.x; cam.y = b.y; cam.follow = null; });
   const el = G.bossAttack
     ? makeAlert('boss', '', '<span id="bossTxt"></span>', [button('🏳 引きあげる', stopBossFight), look])
-    : makeAlert('boss', 'warn', `<span>👑 島のはずれに「カニの王さま」がいます（HP ${b.maxHp}）。たおすと夜のカニが半分になります</span>`, [button('⚔ 戦える仲間で挑む', startBossFight), look, button('とじる', () => removeAlert('boss'))]);
+    : makeAlert('boss', 'warn', `<span>👑 島のはずれに「カニの王さま」がいます（HP ${b.maxHp}）。たおすと夜のカニが半分になります（強い順に最大6匹で挑みます）</span>`, [button('⚔ 強い仲間で挑む', startBossFight), look, button('とじる', () => removeAlert('boss'))]);
   G.bossSpan = el.querySelector('#bossTxt');
   updateBossText();
 }
@@ -3820,6 +3826,11 @@ function update(dt) {
     // 新しい動物が浜辺に流れつく（2日目から2日おき）
     if (G.day >= (G.nextArrival || 2)) { G.nextArrival = G.day + 2; spawnVisitor(); }
     islandNews();
+    if (G.boss && !G.boss.found && !G.boss.dead && G.day >= 8) {   // 王さまが遠すぎて見つからないときのヒント
+      addLog('🗺 浜辺に古い地図が流れついた！ カニの王さまのすみかが描かれている', 'good');
+      reveal(G.boss.ci % MW, Math.floor(G.boss.ci / MW), 5);
+      if (!G.boss.found) { G.boss.found = true; G.pendingBoss = true; }
+    }
     if (seasonDay() === 2 && G.festKey !== festKey() && G.day >= 2) addLog('🎪 この季節のお祭りはまだです。キャンプをタップするとひらけます（木20・食べ物20）');
     dailyEvent(); tryBirths(); growUp();
     if (G.snakes && G.snakes.length < 6 && Math.random() < .4) spawnSnake(25);
@@ -6023,6 +6034,46 @@ if (params.get('auto')) {
     if (params.get('newtest') === '2') { G.festKey = null; startFest(); }
   }
   if (params.get('rc')) { G.rc = { raid: 0, pirate: 0, logs: [] }; const o1 = spawnRaid, o2 = spawnPirates, o3 = addLog; spawnRaid = function () { G.rc.raid++; return o1(); }; spawnPirates = function () { G.rc.pirate++; return o2(); }; addLog = function (t, k) { if (/^(🦀|🏴|🔭|💪|💰|⛵)/.test(t)) G.rc.logs.push(G.day + ':' + t.slice(0, 18)); return o3(t, k); }; }
+  if (params.get('bot')) {   // 確認用：ふつうのプレイヤーのように遊ぶテスト
+    G.botLog = []; G.botDeaths = [];
+    const blog = t => G.botLog.push('D' + G.day + ' ' + t);
+    const od = die; die = function (a, cause) { G.botDeaths.push('D' + G.day + ':' + SP[a.sp].n + '(' + cause + ')'); return od(a, cause); };
+    const near = (type, r0, r1, max) => { const out = []; bfs(G.cx, G.cy, landWalk, (x, y, i, d) => { if (d >= r0 && d <= r1 && out.length < max && canPlace(i, type)) out.push(i); return false; }, 1e9, r1); return out; };
+    const tryPlace = (type, r0, r1) => { const l = near(type, r0, r1, 30); if (!l.length) return false; return placeBuild(type, pick(l), true) === true; };
+    const oh = hourly;
+    hourly = function () {
+      oh();
+      if (G.over) return;
+      const n = alive().length, s = G.stock, h = Math.floor(hour());
+      if (h % 3) return;
+      const saving = G.day >= 10 && !G.botRaft;   // 10日目からはいかだの材料をためる
+      if (G.day >= 8 && !G.botPrio && n >= 4) { G.botPrio = 1; const ad = alive().filter(a => !a.baby && !a.kid); const m = ad.slice().sort((p, q) => eff(q, 'mine') - eff(p, 'mine')).slice(0, 2); const w = ad.filter(a => !m.includes(a)).sort((p, q) => eff(q, 'chop') - eff(p, 'chop')).slice(0, 1); for (const a of m) { ensurePrio(a); a.prio.mine = 1; } for (const a of w) { ensurePrio(a); a.prio.chop = 1; } blog('石集め優先'); }
+      if (countB('fire', false) < 1 && s.wood >= 8) tryPlace('fire', 4, 7);
+      if (countB('house', false) * 2 < n && s.wood >= 35 && s.stone >= 10 && (!saving || s.stone >= 60)) { if (tryPlace('house', 4, 9)) blog('家'); }
+      if (!saving && countB('bed', false) < n && s.wood >= 20) tryPlace('bed', 3, 7);
+      if (countB('kitchen', false) < 1 && s.wood >= 30 && s.stone >= 15) { if (tryPlace('kitchen', 3, 8)) blog('かまど'); }
+      if (countB('farm', false) < 3 && s.wood >= 20) tryPlace('farm', 4, 9);
+      if (countB('tower', false) < 1 && G.day >= 3 && s.wood >= 40 && s.stone >= 15) { if (tryPlace('tower', 3, 7)) blog('見張り台'); }
+      if (countB('trap', false) < 6 && G.day >= 3 && s.wood >= 20 && s.stone >= 30) tryPlace('trap', 5, 9);
+      if (countB('shade', false) < 2 && s.wood >= 20) tryPlace('shade', 3, 7);
+      if (countB('bench', false) < 1 && G.day >= 4 && s.wood >= 40 && s.stone >= 8) { if (tryPlace('bench', 3, 8)) blog('作業台'); }
+      if (!saving && hasDone('bench') && G.craftQ.length < 2 && s.wood >= 40) for (const k of ['spear', 'shield', 'spear', 'shield', 'scarf']) { const g = GEAR[k]; if (g && g.cost && !(G.crafted > 8)) { orderGear(k); break; } }
+      if (countB('desk', false) < 1 && G.day >= 5 && s.wood >= 40 && s.stone >= 10) { if (tryPlace('desk', 3, 8)) blog('研究台'); }
+      // いかだ（木150・石40）
+      if (!G.botRaft && countB('raft', false) < 1 && s.wood >= 170 && s.stone >= 45 && G.day >= 6) {
+        const l = []; bfs(G.cx, G.cy, landWalk, (x, y, i, d) => { if (l.length < 20 && canPlace(i, 'raft')) l.push(i); return false; }, 1e9, 60);
+        if (l.length && placeBuild('raft', l[0], true) === true) { G.botRaft = G.day; blog('いかだ着工'); }
+      }
+      if (hasDone('raft') && !(G.endings && G.endings.raft)) { blog('いかだ完成→出発'); removeAlert('raft'); raftEnding(); $('over').style.display = 'none'; }
+      // カニの王さま：戦える子が4匹以上・元気なら挑む
+      const b = G.boss;
+      if (b && b.found && !b.dead && !G.bossAttack && h >= 8 && h <= 12) {
+        const team = bossTeam();
+        if (team.length >= 5 && (b.hp < b.maxHp || team.length >= 6)) { G.botTries = (G.botTries || 0) + 1; blog('王さまに挑戦(' + team.length + '匹)'); startBossFight(); }
+      }
+      if (b && b.dead && !G.botBossDay) { G.botBossDay = G.day; blog('王さま撃破'); $('over').style.display = 'none'; }
+    };
+  }
   if (params.get('piratetest')) { G.time = 10 / 24; Object.assign(G.stock, { wood: 120, berry: 80, fish: 40 }); spawnPirates(); G.pBefore = JSON.stringify(G.stock); if (params.get('piratetest') === '2') { const cp = campPos(); for (const k of G.crabs) { k.x = cp.x + rand(40, 70); k.y = cp.y + rand(20, 50); k.hp = k.maxHp = 400; } for (const a of alive()) { a.x = cp.x - 300; a.y = cp.y; } } }
   if (params.get('breaktest')) { G.bLog = []; const ol = addLog; addLog = (t, k) => { if (/^(💥|😶|🍓|🎒|⚠|😤|💢)/.test(t)) G.bLog.push(t.slice(0, 2)); return ol(t, k); }; for (const x of alive()) addMem(x, 'テスト', -70, 99); }
   if (params.get('snaketest')) { for (let k = 0; k < 2; k++) { const x = (G.cx + 4 + k) * T, y = (G.cy + 4) * T; G.snakes.push({ x, y, hx: x, hy: y, hp: 32, maxHp: 32, cd: 0, phase: k, flip: false, col: '#7cb342', wt: 0, tgt: null, aggroT: 0, rest: 0 }); } }
@@ -6040,6 +6091,8 @@ if (params.get('auto')) {
   if (params.get('opentech')) openTech();
   if (params.get('newtest')) { const el = document.getElementById('err'); el.style.display = 'block'; const kid = G.animals.find(x => x.name === G.kidName); el.textContent = 'day ' + G.day + ' fest ' + JSON.stringify(G.fest) + ' key ' + G.festKey + ' | grave fl ' + ((G.testGrave.fl || 0) > dayF()) + ' | kid ' + (kid ? kid.name + ' kid' + !!kid.kid + ' baby' + !!kid.baby + ' task' + kid.task : '-') + ' | builds ' + [...G.builds.values()].filter(b => b.done).map(b => b.type).join(',') + ' | log ' + (G.islandLog || []).length + ' news ' + JSON.stringify(G.news) + ' | ' + alive().map(a => a.name + (a.dance ? '💃' : '') + ' m' + Math.round(a.mood) + '[' + moodFactors(a).map(f => f[0] + f[1]).join(',') + ']').join(' / ') + ' | before ' + G.testMood0; }
   if (params.get('openlog')) openIslandLog();
+  if (params.get('fdump')) { const el = document.getElementById('err'); el.style.display = 'block'; el.textContent = alive().map(a => SP[a.sp].n + ' base' + effBase(a, 'fight').toFixed(2) + ' g' + gearMul(a, 'fight').toFixed(2) + ' s' + skillMul(a, 'fight').toFixed(2) + ' t' + techMul(a, 'fight').toFixed(2) + ' eff' + eff(a, 'fight').toFixed(2) + ' F' + isFighter(a) + ' inj' + !!a.injury + ' kid' + !!a.kid).join(' / ') + ' | boss ' + JSON.stringify(G.boss && { ci: G.boss.ci, found: G.boss.found }) + ' explored ' + Math.round(G.landExplored / G.landTotal * 100); }
+  if (params.get('bot')) { const el = document.getElementById('err'); el.style.display = 'block'; const bs = G.boss; el.textContent = 'DAY ' + G.day + ' over=' + !!G.over + ' alive=' + alive().length + ' wealth=' + G.wealth + ' endings=' + JSON.stringify(G.endings || {}) + ' boss=' + (bs ? (bs.found ? 'found ' : 'hidden ') + Math.round(bs.hp) + (bs.dead ? ' DEAD' : '') : 'none') + ' tries=' + (G.botTries || 0) + ' fighters=' + alive().filter(isFighter).length + ' bossHint=' + (G.boss && G.boss.found) + ' stock=' + JSON.stringify(G.stock) + ' | ' + G.botLog.join(', ') + ' | deaths ' + G.botDeaths.length + ': ' + G.botDeaths.join(', '); }
   if (params.get('rc')) { const el = document.getElementById('err'); el.style.display = 'block'; el.textContent = 'day ' + G.day + ' raids ' + G.rc.raid + ' pirates ' + G.rc.pirate + ' next ' + G.nextPirate + ' | ' + G.rc.logs.join(' / ') + ' | news ' + JSON.stringify(G.news); }
   if (params.get('notoast')) $('bigToast').style.display = 'none';
   if (params.get('piratetest')) { const el = document.getElementById('err'); el.style.display = 'block'; el.textContent = 'ship ' + !!G.pship + ' | pirates ' + G.crabs.filter(k => k.kind === 'pirate').map(k => Math.round(k.hp) + (k.loot ? '[' + k.loot.k + k.loot.n + ']' : '') + (k.flee ? 'F' : '')).join(',') + ' | before ' + G.pBefore + ' | now ' + JSON.stringify(G.stock) + ' | ' + alive().map(a => a.name + ' hp' + Math.round(a.hp)).join(' / '); if (G.crabs[0]) { cam.x = G.crabs[0].x; cam.y = G.crabs[0].y; } if (params.get('shipview') && G.pship) { cam.x = G.pship.x; cam.y = G.pship.y; } }
